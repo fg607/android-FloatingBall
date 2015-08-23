@@ -5,6 +5,9 @@ package com.hardwork.fg607.floatingball.utils;
  *
  */
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.input.InputManager;
 import android.os.Build;
 import android.os.RemoteException;
@@ -16,6 +19,31 @@ import android.view.KeyEvent;
 
 public class FloatingBallUtils {
 
+    /**
+     * 获取MainActivity的SharedPreferences共享数据
+     * @param context
+     * @return
+     */
+    public static SharedPreferences getSharedPreferences(Context context)
+    {
+        Context mainActivityContext = null;
+        SharedPreferences sp = null;
+        try {
+            //创建上下文，指定宿主应用的包名以及 忽略系统的安全过滤，这点切勿忽视！
+            mainActivityContext=context.createPackageContext("com.hardwork.fg607.floatingball", Context.CONTEXT_IGNORE_SECURITY);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        if(mainActivityContext != null)
+        {
+             sp = mainActivityContext.getSharedPreferences("config",Context.MODE_MULTI_PROCESS);
+        }
+
+        return sp;
+
+
+    }
 
     /**
      * 模拟全局按键

@@ -19,32 +19,46 @@ import com.hardwork.fg607.floatingball.service.FloatingBallService;
 
 public class MainActivity extends Activity {
 
-    private Switch aSwitchStart,aSwitchMove ;
-    public static SharedPreferences sp;
+    private Switch aSwitchOnOff,aSwitchMove,aSwitchAutoStart ;
     private boolean serviceState;
-
+    public  SharedPreferences sp;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        sp = getSharedPreferences("config",MODE_PRIVATE);
-        aSwitchStart = (Switch) findViewById(R.id.switch_start);
+        sp = getSharedPreferences("config", MODE_WORLD_READABLE);
+        aSwitchOnOff = (Switch) findViewById(R.id.switch_start);
         aSwitchMove = (Switch) findViewById(R.id.switch_move);
+        aSwitchAutoStart = (Switch) findViewById(R.id.switch_autostart);
 
         //获取保存的状态数据，初始化开关状态
         if(sp.getBoolean("ballstate",false))
         {
-            aSwitchStart.setChecked(true);
+            aSwitchOnOff.setChecked(true);
+            if(!sp.getBoolean("servicestate",false))
+            {
+                postMsg("ballstate","showball");
+            }
 
         }
         else
         {
-            aSwitchStart.setChecked(false);
+            aSwitchOnOff.setChecked(false);
+        }
+
+        if(sp.getBoolean("autostart",false))
+        {
+            aSwitchAutoStart.setChecked(true);
+        }
+        else
+        {
+            aSwitchAutoStart.setChecked(false);
         }
 
 
-        aSwitchStart.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+        aSwitchOnOff.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
@@ -56,22 +70,15 @@ public class MainActivity extends Activity {
 
                     aSwitchMove.setEnabled(true);
 
-                    //判断service是否启动，没有则开启service
-                    if (!serviceState)
-                        openService();
-
 
                 } else {
                     postMsg("ballstate", "closeball");
                     saveStates("ballstate", false);
+                    exitService();
                     aSwitchMove.setChecked(false);
 
                     //如果悬浮球关闭，禁用所有其它选项
                     aSwitchMove.setEnabled(false);
-
-                    //关闭悬浮球后，退出service
-                    if(serviceState)
-                        exitService();
                 }
             }
         });
@@ -101,6 +108,19 @@ public class MainActivity extends Activity {
             }
         });
 
+        aSwitchAutoStart.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) {
+                    saveStates("autostart", true);
+                }
+                else {
+                    saveStates("autostart", false);
+                }
+
+            }
+        });
+
     }
 
     /**
@@ -117,27 +137,11 @@ public class MainActivity extends Activity {
 
     }
 
-    /**
-     * 退出Service
-     */
     public void exitService()
     {
-        serviceState = false;
-        Intent serviceIntent = new Intent();
-        serviceIntent.setClass(MainActivity.this, FloatingBallService.class);
-        stopService(serviceIntent);
-
-    }
-
-    /**
-     * 启动Service
-     */
-    public void openService()
-    {
-        serviceState = true;
-        Intent serviceIntent = new Intent();
-        serviceIntent.setClass(MainActivity.this, FloatingBallService.class);
-        startService(serviceIntent);
+        Intent intent = new Intent();
+        intent.setClass(MainActivity.this, FloatingBallService.class);
+        stopService(intent);
 
     }
     /**

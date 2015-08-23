@@ -10,6 +10,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
 import android.os.IBinder;
 import android.view.Gravity;
@@ -49,6 +50,7 @@ public class FloatingBallService extends Service implements View.OnClickListener
     private boolean ismoving = false;
     private boolean canmove = false;
     private Notification notification = null;
+    private SharedPreferences sp;
 
     @Override
     public void onCreate() {
@@ -57,6 +59,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
         ballView = LayoutInflater.from(this).inflate(R.layout.floatball, null);
         floatImage = (Button)ballView.findViewById(R.id.float_image);
         tag = 0;
+        sp = FloatingBallUtils.getSharedPreferences(this);
+        saveStates("servicestate",true);
         //  setUpFloatMenuView();
         createFloatBallView();
 
@@ -123,7 +127,7 @@ public class FloatingBallService extends Service implements View.OnClickListener
             PendingIntent pendingintent =PendingIntent.getActivity(this,0,appIntent,0);
 
 
-            notification.setLatestEventInfo(this, "FloatBall", "Made By Fg07",
+            notification.setLatestEventInfo(this, "FloatBall", "Made By fg607",
                     pendingintent);
             startForeground(0x111, notification);//使Service处于前台，避免容易被清除
         }
@@ -155,11 +159,13 @@ public class FloatingBallService extends Service implements View.OnClickListener
         ballWmParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         ballWmParams.gravity = Gravity.LEFT | Gravity.TOP;
 
-        ballWmParams.x = MainActivity.sp.getInt("ballWmParamsX",0);
-        ballWmParams.y = MainActivity.sp.getInt("ballWmParamsY",0);
+        ballWmParams.x = sp.getInt("ballWmParamsX",0);
+        ballWmParams.y = sp.getInt("ballWmParamsY",0);
 
-        ballWmParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        ballWmParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+      //  ballWmParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        //ballWmParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        ballWmParams.width = 120;
+        ballWmParams.height = 120;
         ballWmParams.format = PixelFormat.RGBA_8888;
 
 
@@ -198,7 +204,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
                         mTouchStartX = mTouchStartY = 0;
                         newOffsetX = ballWmParams.x;
                         newOffsetY = ballWmParams.y;
-                        // 只要按钮一动位置不是很大,就认为是点击事件
+
+                        // 点击悬浮球
                         if (Math.abs(oldOffsetX - newOffsetX) <= 20 && Math.abs(oldOffsetY - newOffsetY) <= 20) {
                             onFloatBallClick();
                             onClearOffset();
@@ -206,18 +213,22 @@ public class FloatingBallService extends Service implements View.OnClickListener
 
                         if(!canmove)
                         {
+                            //向上滑动
                             if ((oldOffsetY - newOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20 && (oldOffsetY - newOffsetY) >20 )
                             {
 
                                 onFloatBallFlipUp();
                             }
+                            //向下滑动
                             else if ((newOffsetY - oldOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20  && (newOffsetY - oldOffsetY) > 20 ){
                                 onFloatBallFlipDown();
                             }
+                            //向左滑动
                             else if ((oldOffsetX - newOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20  && (oldOffsetX - newOffsetX) > 20 )
                             {
                                 onFloatBallFlipLeft();
                             }
+                            //向右滑动
                             else if((newOffsetX - oldOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20  && (newOffsetX - oldOffsetX) > 20){
                                 onFloatBallFlipRight();
                             }
@@ -251,8 +262,21 @@ public class FloatingBallService extends Service implements View.OnClickListener
 
     public void saveStates(String name,int number)
     {
-        Editor editor = MainActivity.sp.edit();
+        Editor editor = sp.edit();
         editor.putInt(name,number);
+        editor.commit();
+
+    }
+
+    /**
+     * 将状态数据保存在sharepreferences
+     * @param name
+     * @param state
+     */
+    public void saveStates(String name ,boolean state)
+    {
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean(name, state);
         editor.commit();
 
     }
@@ -267,53 +291,48 @@ public class FloatingBallService extends Service implements View.OnClickListener
     }
 
     /**
-     * 点击悬浮球
+     * 点击悬浮球返回
      */
 
     private  void  onFloatBallClick(){
 
         FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_BACK);
-        Toast.makeText(this,"返回键按下",Toast.LENGTH_SHORT).show();
     }
     /**
-     * 悬浮球向上滑动
+     * 悬浮球向上滑动，弹出menu
      */
 
     private  void  onFloatBallFlipUp(){
 
 
         FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_MENU);
-        Toast.makeText(this,"菜单键按下",Toast.LENGTH_SHORT).show();
     }
     /**
-     * 悬浮球向下滑动
+     * 悬浮球向下滑动，回到桌面
      */
 
     private  void  onFloatBallFlipDown(){
 
 
         FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_HOME);
-        Toast.makeText(this,"HOME键按下",Toast.LENGTH_SHORT).show();
     }
     /**
-     * 悬浮球向左滑动
+     * 悬浮球向左滑动，关闭屏幕
      */
 
     private  void  onFloatBallFlipLeft(){
 
 
         FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_POWER);
-        Toast.makeText(this,"电源键按下",Toast.LENGTH_SHORT).show();
     }
     /**
-     * 悬浮球向右滑动
+     * 悬浮球向右滑动，打开任务面板
      */
 
     private  void  onFloatBallFlipRight(){
 
 
         FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_APP_SWITCH);
-        Toast.makeText(this,"打开任务面板",Toast.LENGTH_SHORT).show();
     }
     /**
      * 更新view的显示位置
@@ -366,5 +385,15 @@ public class FloatingBallService extends Service implements View.OnClickListener
     {
 
         wm.addView(ballView, ballWmParams);
+    }
+
+    @Override
+    public void onDestroy() {
+
+        saveStates("servicestate",false);
+
+        //销毁时停止前台
+        stopForeground(true);
+        super.onDestroy();
     }
 }
