@@ -1,5 +1,10 @@
 package com.hardwork.fg607.floatingball.service;
 
+/**
+ * Created by fg607 on 15-8-20.
+ *
+ */
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -19,6 +24,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 import com.hardwork.fg607.floatingball.MainActivity;
 import com.hardwork.fg607.floatingball.R;
+import com.hardwork.fg607.floatingball.utils.FloatingBallUtils;
 
 import static android.content.SharedPreferences.Editor;
 
@@ -266,8 +272,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
 
     private  void  onFloatBallClick(){
 
-
-        Toast.makeText(this,"点击悬浮球",Toast.LENGTH_SHORT).show();
+        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_BACK);
+        Toast.makeText(this,"返回键按下",Toast.LENGTH_SHORT).show();
     }
     /**
      * 悬浮球向上滑动
@@ -276,7 +282,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
     private  void  onFloatBallFlipUp(){
 
 
-        Toast.makeText(this,"悬浮球向上滑动",Toast.LENGTH_SHORT).show();
+        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_MENU);
+        Toast.makeText(this,"菜单键按下",Toast.LENGTH_SHORT).show();
     }
     /**
      * 悬浮球向下滑动
@@ -285,7 +292,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
     private  void  onFloatBallFlipDown(){
 
 
-        Toast.makeText(this,"悬浮球向下滑动",Toast.LENGTH_SHORT).show();
+        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_HOME);
+        Toast.makeText(this,"HOME键按下",Toast.LENGTH_SHORT).show();
     }
     /**
      * 悬浮球向左滑动
@@ -294,7 +302,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
     private  void  onFloatBallFlipLeft(){
 
 
-        Toast.makeText(this,"悬浮球向左滑动",Toast.LENGTH_SHORT).show();
+        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_POWER);
+        Toast.makeText(this,"电源键按下",Toast.LENGTH_SHORT).show();
     }
     /**
      * 悬浮球向右滑动
@@ -303,7 +312,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
     private  void  onFloatBallFlipRight(){
 
 
-        Toast.makeText(this,"悬浮球向右滑动",Toast.LENGTH_SHORT).show();
+        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_APP_SWITCH);
+        Toast.makeText(this,"打开任务面板",Toast.LENGTH_SHORT).show();
     }
     /**
      * 更新view的显示位置

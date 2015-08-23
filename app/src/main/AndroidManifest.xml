@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.hardwork.fg607.floatingball" >
+    package="com.hardwork.fg607.floatingball"
+    android:sharedUserId="android.uid.system">
 
     <application
         android:allowBackup="true"
@@ -26,4 +27,6 @@
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+    <uses-permission android:name="android.permission.INJECT_EVENTS" />
+
 </manifest>

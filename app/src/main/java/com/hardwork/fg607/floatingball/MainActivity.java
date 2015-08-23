@@ -1,9 +1,14 @@
 package com.hardwork.fg607.floatingball;
 
+/**
+ * Created by fg607 on 15-8-20.
+ *
+ */
+
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
@@ -12,7 +17,7 @@ import android.widget.Switch;
 import com.hardwork.fg607.floatingball.service.FloatingBallService;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
 
     private Switch aSwitchStart,aSwitchMove ;
     public static SharedPreferences sp;
@@ -27,6 +32,7 @@ public class MainActivity extends ActionBarActivity {
         aSwitchStart = (Switch) findViewById(R.id.switch_start);
         aSwitchMove = (Switch) findViewById(R.id.switch_move);
 
+        //获取保存的状态数据，初始化开关状态
         if(sp.getBoolean("ballstate",false))
         {
             aSwitchStart.setChecked(true);
@@ -37,14 +43,20 @@ public class MainActivity extends ActionBarActivity {
             aSwitchStart.setChecked(false);
         }
 
+
         aSwitchStart.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
                 if (b) {
+
+                    //向service发送显示悬浮求消息，并保存悬浮球显示状态
                     postMsg("ballstate", "showball");
                     saveStates("ballstate", true);
+
                     aSwitchMove.setEnabled(true);
+
+                    //判断service是否启动，没有则开启service
                     if (!serviceState)
                         openService();
 
@@ -53,7 +65,11 @@ public class MainActivity extends ActionBarActivity {
                     postMsg("ballstate", "closeball");
                     saveStates("ballstate", false);
                     aSwitchMove.setChecked(false);
+
+                    //如果悬浮球关闭，禁用所有其它选项
                     aSwitchMove.setEnabled(false);
+
+                    //关闭悬浮球后，退出service
                     if(serviceState)
                         exitService();
                 }
