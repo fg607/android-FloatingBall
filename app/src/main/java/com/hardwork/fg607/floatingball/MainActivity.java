@@ -36,10 +36,8 @@ public class MainActivity extends Activity {
         if(sp.getBoolean("ballstate",false))
         {
             aSwitchOnOff.setChecked(true);
-            if(!sp.getBoolean("servicestate",false))
-            {
-                postMsg("ballstate","showball");
-            }
+
+            postMsg("ballstate","showball");
 
         }
         else
@@ -72,7 +70,6 @@ public class MainActivity extends Activity {
 
 
                 } else {
-                    postMsg("ballstate", "closeball");
                     saveStates("ballstate", false);
                     exitService();
                     aSwitchMove.setChecked(false);
@@ -176,5 +173,12 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+
+
+        super.onDestroy();
     }
 }

@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
+import android.os.Handler;
 import android.os.IBinder;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -23,6 +24,7 @@ import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
 import com.hardwork.fg607.floatingball.MainActivity;
 import com.hardwork.fg607.floatingball.R;
 import com.hardwork.fg607.floatingball.utils.FloatingBallUtils;
@@ -51,6 +53,16 @@ public class FloatingBallService extends Service implements View.OnClickListener
     private boolean canmove = false;
     private Notification notification = null;
     private SharedPreferences sp;
+    private boolean isAdd;
+    private int clickCount;
+    private boolean doubleClickCounting;
+    private static final long CLICK_SPACING_TIME = 200;
+
+    private static final long LONG_PRESS_TIME = 400;
+    private Handler myHandler;
+    private LongPressedThread mLongPressedThread;
+    private ClickPressedThread mClickPressedThread;
+    private long mPreClickTime;
 
     @Override
     public void onCreate() {
@@ -59,8 +71,12 @@ public class FloatingBallService extends Service implements View.OnClickListener
         ballView = LayoutInflater.from(this).inflate(R.layout.floatball, null);
         floatImage = (Button)ballView.findViewById(R.id.float_image);
         tag = 0;
+        isAdd = false;
+        clickCount = 0;
+        doubleClickCounting = false;
+        myHandler = new Handler();
+        mPreClickTime = 0;
         sp = FloatingBallUtils.getSharedPreferences(this);
-        saveStates("servicestate",true);
         //  setUpFloatMenuView();
         createFloatBallView();
 
@@ -149,6 +165,47 @@ public class FloatingBallService extends Service implements View.OnClickListener
         menuTop.setOnClickListener(this);
     }*/
 
+
+public class LongPressedThread implements Runnable{
+
+    @Override
+
+    public void run() {
+
+        //这里处理长按事件
+
+        onFloatBallDoubleClick();
+        clickCount = 0;
+
+    }
+
+}
+
+    public class ClickPressedThread implements Runnable{
+
+        @Override
+
+        public void run() {
+
+            //这里处理连续点击事件 clickCount 为连续点击的次数
+
+            if(clickCount == 1)
+            {
+                //单击
+               onFloatBallClick();
+            }
+            else if (clickCount == 2)
+            {
+                //双击
+                onFloatBallDoubleClick();
+            }
+            clickCount = 0;
+
+
+        }
+
+    }
+
     /**
      * 创建ＦloatBallView，并初始化显示参数
      */
@@ -174,28 +231,41 @@ public class FloatingBallService extends Service implements View.OnClickListener
             public boolean onTouch(View v, MotionEvent event) {
                 x = event.getX();
                 y = event.getY();
-                if(tag == 0)
-                {
+                if (tag == 0) {
                     oldOffsetX = ballWmParams.x;
                     oldOffsetY = ballWmParams.y;
                 }
 
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        clickCount++;
+                        mPreClickTime = System.currentTimeMillis();
+
+                        if(mClickPressedThread != null)
+                        {
+                            myHandler.removeCallbacks(mClickPressedThread);
+                        }
+
+                        mLongPressedThread = new LongPressedThread();
+                        myHandler.postDelayed(mLongPressedThread,LONG_PRESS_TIME);
+
                         ismoving = false;
-                        mTouchStartX = (int)event.getX();
-                        mTouchStartY = (int)event.getY();
+                        mTouchStartX = (int) event.getX();
+                        mTouchStartY = (int) event.getY();
                         break;
                     case MotionEvent.ACTION_MOVE:
                         ismoving = true;
+
+                        //取消注册的长按事件
+
+                      //  myHandler.removeCallbacks(mLongPressedThread);
                         tag = 1;
-                        ballWmParams.x += (int) (x - mTouchStartX)/3;// 减小偏移量,防止过度抖动
-                        ballWmParams.y += (int) (y - mTouchStartY)/3;// 减小偏移量,防止过度抖动
-                        if(canmove)
-                        {
+                        ballWmParams.x += (int) (x - mTouchStartX) / 3;// 减小偏移量,防止过度抖动
+                        ballWmParams.y += (int) (y - mTouchStartY) / 3;// 减小偏移量,防止过度抖动
+                        if (canmove) {
                             updateViewPosition();
                             saveStates("ballWmParamsX", ballWmParams.x);
-                            saveStates("ballWmParamsY",ballWmParams.y);
+                            saveStates("ballWmParamsY", ballWmParams.y);
                         }
 
                         break;
@@ -206,30 +276,39 @@ public class FloatingBallService extends Service implements View.OnClickListener
                         newOffsetY = ballWmParams.y;
 
                         // 点击悬浮球
-                        if (Math.abs(oldOffsetX - newOffsetX) <= 20 && Math.abs(oldOffsetY - newOffsetY) <= 20) {
-                            onFloatBallClick();
+                        if (Math.abs(oldOffsetX - newOffsetX) <= 20 && Math.abs(oldOffsetY - newOffsetY) <= 20)
+                        {
+
+                            if(System.currentTimeMillis() - mPreClickTime <= LONG_PRESS_TIME)
+                            {
+
+                                //取消注册的长按事件
+
+                                myHandler.removeCallbacks(mLongPressedThread);
+
+                                mClickPressedThread = new ClickPressedThread();
+                                myHandler.postDelayed(mClickPressedThread, CLICK_SPACING_TIME);
+                            }
+
                             onClearOffset();
                         }
 
-                        if(!canmove)
-                        {
+                        if (!canmove) {
                             //向上滑动
-                            if ((oldOffsetY - newOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20 && (oldOffsetY - newOffsetY) >20 )
-                            {
+                            if ((oldOffsetY - newOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20 && (oldOffsetY - newOffsetY) > 20) {
 
                                 onFloatBallFlipUp();
                             }
                             //向下滑动
-                            else if ((newOffsetY - oldOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20  && (newOffsetY - oldOffsetY) > 20 ){
+                            else if ((newOffsetY - oldOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20 && (newOffsetY - oldOffsetY) > 20) {
                                 onFloatBallFlipDown();
                             }
                             //向左滑动
-                            else if ((oldOffsetX - newOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20  && (oldOffsetX - newOffsetX) > 20 )
-                            {
+                            else if ((oldOffsetX - newOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20 && (oldOffsetX - newOffsetX) > 20) {
                                 onFloatBallFlipLeft();
                             }
                             //向右滑动
-                            else if((newOffsetX - oldOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20  && (newOffsetX - oldOffsetX) > 20){
+                            else if ((newOffsetX - oldOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20 && (newOffsetX - oldOffsetX) > 20) {
                                 onFloatBallFlipRight();
                             }
                             onClearOffset();
@@ -240,43 +319,26 @@ public class FloatingBallService extends Service implements View.OnClickListener
                         break;
                 }
                 //如果拖动则返回false，否则返回true
-                if(ismoving == false){
+                if (ismoving == false) {
                     return false;
-                }else{
+                } else {
                     return true;
                 }
             }
 
         });
-        //注册点击事件监听器
-        floatImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-              /*  DisplayMetrics dm = getResources().getDisplayMetrics();
-                pop = new PopupWindow(menuView, dm.widthPixels, dm.heightPixels);
-                pop.showAtLocation(ballView, Gravity.CENTER, 0, 0);
-                pop.update();*/
-            }
-        });
-    }
-
-    public void saveStates(String name,int number)
-    {
-        Editor editor = sp.edit();
-        editor.putInt(name,number);
-        editor.commit();
 
     }
 
     /**
      * 将状态数据保存在sharepreferences
      * @param name
-     * @param state
+     * @param number
      */
-    public void saveStates(String name ,boolean state)
+    public void saveStates(String name,int number)
     {
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putBoolean(name, state);
+        Editor editor = sp.edit();
+        editor.putInt(name, number);
         editor.commit();
 
     }
@@ -290,6 +352,15 @@ public class FloatingBallService extends Service implements View.OnClickListener
         ballWmParams.y = oldOffsetY;
     }
 
+
+    /**
+     * 双击悬浮球
+     */
+    private void onFloatBallDoubleClick(){
+
+        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_APP_SWITCH);
+
+    }
     /**
      * 点击悬浮球返回
      */
@@ -378,19 +449,29 @@ public class FloatingBallService extends Service implements View.OnClickListener
 
     public void closeFloatBall()
     {
-        wm.removeView(ballView);
+        if (isAdd)
+        {
+            wm.removeView(ballView);
+            isAdd = !isAdd;
+        }
+
 
     }
     public void  showFloatBall()
     {
 
-        wm.addView(ballView, ballWmParams);
+        if(!isAdd)
+        {
+            wm.addView(ballView, ballWmParams);
+            isAdd = !isAdd;
+        }
+
     }
 
     @Override
     public void onDestroy() {
 
-        saveStates("servicestate",false);
+        closeFloatBall();
 
         //销毁时停止前台
         stopForeground(true);

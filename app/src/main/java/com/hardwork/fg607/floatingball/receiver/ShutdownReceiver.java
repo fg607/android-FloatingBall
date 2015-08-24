@@ -24,9 +24,8 @@ public class ShutdownReceiver extends BroadcastReceiver {
 
         sp = FloatingBallUtils.getSharedPreferences(context);
 
-        if(intent.getAction().equals(Intent.ACTION_SHUTDOWN) && sp.getBoolean("servicestate",false)){
+        if(intent.getAction().equals(Intent.ACTION_SHUTDOWN) && sp.getBoolean("ballstate",false)){
             Intent newIntent = new Intent(context,FloatingBallService.class);
-            newIntent.putExtra("ballstate","closeball");
             context.stopService(newIntent);
         }
     }
