@@ -15,11 +15,6 @@ public class ShutdownReceiver extends BroadcastReceiver {
 
     private SharedPreferences sp;
 
-
-    public ShutdownReceiver(){
-
-    }
-
     public void onReceive(Context context, Intent intent) {
 
         sp = FloatingBallUtils.getSharedPreferences(context);

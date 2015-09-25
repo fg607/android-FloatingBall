@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/set_gesture"
+        android:layout_width="fill_parent"
+        android:textSize="18sp"
+        android:textColor="@color/path_black"
+        android:text="设置手势"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/delete"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:text="删除场景"
+        android:background="#f00"/>
+
+
+
+</LinearLayout>

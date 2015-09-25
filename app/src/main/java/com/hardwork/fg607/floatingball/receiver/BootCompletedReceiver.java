@@ -15,10 +15,6 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 
     private SharedPreferences sp;
 
-    public BootCompletedReceiver(){
-
-    }
-
     public void onReceive(Context context, Intent intent) {
 
 

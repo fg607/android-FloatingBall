@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="30dp">
+
+        <EditText
+            android:id="@+id/sceneName"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="true"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:hint="输入场景名称"
+            android:background="@null"
+            android:singleLine="true"
+            />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#53afff"/>
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/cancel"
+            android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:clickable="true"
+            android:textColor="@color/path_black"
+            android:text="取消"
+            />
+
+        <LinearLayout
+            android:layout_width="1dp"
+            android:layout_weight="0.001"
+            android:layout_height="match_parent"
+            android:background="#53afff"/>
+        <TextView
+            android:id="@+id/ok"
+            android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:clickable="true"
+            android:textColor="@color/path_black"
+            android:text="确定"
+            />
+
+    </LinearLayout>
+
+
+</LinearLayout>

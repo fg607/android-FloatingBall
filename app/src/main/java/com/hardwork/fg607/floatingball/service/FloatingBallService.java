@@ -5,79 +5,116 @@ package com.hardwork.fg607.floatingball.service;
  *
  */
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Handler;
 import android.os.IBinder;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.AnticipateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.hardwork.fg607.floatingball.MainActivity;
 import com.hardwork.fg607.floatingball.R;
+import com.hardwork.fg607.floatingball.utils.AnimatorUtils;
+import com.hardwork.fg607.floatingball.utils.BallFunctionDao;
 import com.hardwork.fg607.floatingball.utils.FloatingBallUtils;
+import com.ogaclejapan.arclayout.ArcLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static android.content.SharedPreferences.Editor;
 
-public class FloatingBallService extends Service implements View.OnClickListener,View.OnKeyListener {
-    public FloatingBallService() {
-    }
+public class FloatingBallService extends Service implements View.OnClickListener{
 
-    WindowManager wm = null;
-    WindowManager.LayoutParams ballWmParams = null;
-    private View ballView;
-    private View menuView;
+    private WindowManager mWindowManager = null;
+    private WindowManager.LayoutParams mBallWmParams = null;
+    private View mBallView;
+    private View mMenuView;
     private float mTouchStartX;
     private float mTouchStartY;
     private float x;
     private float y;
-    private int oldOffsetX, oldOffsetY,newOffsetX,newOffsetY;
-    private int tag ;
-    private RelativeLayout menuLayout;
-    private Button floatImage;
-    private PopupWindow pop;
-    private RelativeLayout menuTop;
-    private boolean ismoving = false;
-    private boolean canmove = false;
-    private Notification notification = null;
-    private SharedPreferences sp;
-    private boolean isAdd;
-    private int clickCount;
-    private boolean doubleClickCounting;
-    private static final long CLICK_SPACING_TIME = 200;
-
-    private static final long LONG_PRESS_TIME = 400;
-    private Handler myHandler;
+    private int mOldOffsetX, mOldOffsetY,mNewOffsetX,mNewOffsetY;
+    private int mTag ;
+    private FrameLayout mMenuLayout;
+    private Button mFloatImage;
+    private PopupWindow mPopWindow;
+    private boolean mIsmoving = false;
+    private boolean mCanmove = false;
+    private Notification mNotification = null;
+    public SharedPreferences sp;
+    private boolean mIsAdd;
+    private int mClickCount;
+    public static final long CLICK_SPACING_TIME = 200;
+    public static final long LONG_PRESS_TIME = 300;
+    public static final int TRANSPARENT = 150;
+    public static final int FLOAT_BALL_SIZE = 90;
+    private Handler mHandler;
     private LongPressedThread mLongPressedThread;
     private ClickPressedThread mClickPressedThread;
+    private ShowPopMenuThread mShowPopMenuThread;
+    private HidePopMenuThread mHidePopMenuThread;
     private long mPreClickTime;
+    public int transparent;
+    private ArcLayout mArcLayout;
+    private Button mFab;
+    private BallFunctionDao mBallFunctionDao;
+    private ArrayList<String> mCurrentFuncList;
+    private boolean mLongPressing;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        //加载悬浮球布局
-        ballView = LayoutInflater.from(this).inflate(R.layout.floatball, null);
-        floatImage = (Button)ballView.findViewById(R.id.float_image);
-        tag = 0;
-        isAdd = false;
-        clickCount = 0;
-        doubleClickCounting = false;
-        myHandler = new Handler();
-        mPreClickTime = 0;
+
+        //生成存储工具
         sp = FloatingBallUtils.getSharedPreferences(this);
-        //  setUpFloatMenuView();
+        mBallFunctionDao = new BallFunctionDao(this);
+
+        //加载悬浮球布局
+        mBallView = LayoutInflater.from(this).inflate(R.layout.floatball, null);
+        mFloatImage = (Button)mBallView.findViewById(R.id.float_image);
+        transparent = TRANSPARENT;
+        mFloatImage.getBackground().setAlpha(transparent);
+
+
+        mTag = 0;
+        mIsAdd = false;
+        mClickCount = 0;
+        mHandler = new Handler();
+        mPreClickTime = 0;
+
+        //加载悬浮球功能
+        loadFunction();
+
+
+        //悬浮球动作不够6个退出
+        if(mCurrentFuncList.size() < 6) {
+            onDestroy();
+        }
+
+        //加载功能键
+        setUpFloatMenuView();
+
+        //加载悬浮球
         createFloatBallView();
 
     }
@@ -85,28 +122,27 @@ public class FloatingBallService extends Service implements View.OnClickListener
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
+        //开启关闭自由移动
         String moveAction = intent.getStringExtra("canmove");
 
         if(moveAction != null) {
 
-            switch (moveAction)
-            {
+            switch (moveAction) {
                 case "moveallowed":
-                    canmove = true;
+                    mCanmove = true;
                     break;
                 case "moveforbidden":
-                    canmove = false;
+                    mCanmove = false;
                     break;
-
             }
         }
 
+        //开启关闭悬浮球
         String showAction = intent.getStringExtra("ballstate");
 
         if(showAction != null) {
 
-            switch (showAction)
-            {
+            switch (showAction) {
                 case "showball":
                     showFloatBall();
                     break;
@@ -117,14 +153,31 @@ public class FloatingBallService extends Service implements View.OnClickListener
             }
         }
 
-        if(notification == null)
+        //重新加载悬浮球功能
+        boolean isLoadFunction = intent.getBooleanExtra("loadfunction",false);
+
+        if (isLoadFunction) {
+            loadFunction();
+        }
+
+        //更新功能键图标
+        boolean isUpdateMenuIcons = intent.getBooleanExtra("updatemenuicons",false);
+
+        if(isUpdateMenuIcons)
+        {
+            updateMenuIcons();
+            updateBallIcon();
+        }
+
+        //设置通知栏
+        if(mNotification == null)
         {
             //设置通知栏
-            Notification notification = new Notification(R.drawable.ball,
+            Notification mNotification = new Notification(R.drawable.nor,
                     getString(R.string.app_name), System.currentTimeMillis());
 
 
-            // notification.flags=Notification.FLAG_AUTO_CANCEL;用户点击清除能够清除通知
+            // mNotification.flags=Notification.FLAG_AUTO_CANCEL;用户点击清除能够清除通知
 
 
             //点击通知栏返回后台程序，默认新建
@@ -143,9 +196,9 @@ public class FloatingBallService extends Service implements View.OnClickListener
             PendingIntent pendingintent =PendingIntent.getActivity(this,0,appIntent,0);
 
 
-            notification.setLatestEventInfo(this, "FloatBall", "Made By fg607",
+            mNotification.setLatestEventInfo(this, "FloatBall", "Made By fg607",
                     pendingintent);
-            startForeground(0x111, notification);//使Service处于前台，避免容易被清除
+            startForeground(0x111, mNotification);//使Service处于前台，避免容易被清除
         }
 
 
@@ -153,53 +206,188 @@ public class FloatingBallService extends Service implements View.OnClickListener
 
         return super.onStartCommand(intent, flags, startId);
     }
+
+
 /**
  * 窗口菜单初始化
  */
-   /* private void setUpFloatMenuView(){
-        menuView = LayoutInflater.from(this).inflate(R.layout.floatmenu, null);
-        menuLayout = (RelativeLayout)menuView.findViewById(R.id.menu);
-        menuTop = (RelativeLayout)menuView.findViewById(R.id.lay_main);
-        menuLayout.setOnClickListener(this);
-        menuLayout.setOnKeyListener(this);
-        menuTop.setOnClickListener(this);
-    }*/
+    private void setUpFloatMenuView(){
+
+        mShowPopMenuThread = new ShowPopMenuThread();
+        mHidePopMenuThread = new HidePopMenuThread();
+
+        mMenuView = LayoutInflater.from(this).inflate(R.layout.popup, null);
+        mMenuLayout = (FrameLayout) mMenuView.findViewById(R.id.menu_layout);
+        updateMenuIcons();
+        mArcLayout = (ArcLayout) mMenuView.findViewById(R.id.arc_layout);
+        mFab = (Button) mMenuView.findViewById(R.id.fab);
 
 
+        for (int i = 0, size = mArcLayout.getChildCount(); i < size; i++) {
+            mArcLayout.getChildAt(i).setOnClickListener(this);
+        }
+
+        mFab.setOnClickListener(this);
+    }
+
+    /**
+     * 显示功能键面板
+     */
+    private void showMenu() {
+
+        mMenuLayout.setVisibility(View.VISIBLE);
+        List<Animator> animList = new ArrayList<>();
+
+        for (int i = 0, len = mArcLayout.getChildCount(); i < len; i++) {
+            animList.add(createShowItemAnimator(mArcLayout.getChildAt(i)));
+        }
+
+        AnimatorSet animSet = new AnimatorSet();
+        animSet.setDuration(400);
+        animSet.setInterpolator(new OvershootInterpolator());
+        animSet.playTogether(animList);
+        animSet.start();
+    }
+
+
+    /**
+     * 隐藏功能键面板
+     */
+    private void hideMenu() {
+
+        List<Animator> animList = new ArrayList<>();
+
+        for (int i = mArcLayout.getChildCount() - 1; i >= 0; i--) {
+            animList.add(createHideItemAnimator(mArcLayout.getChildAt(i)));
+        }
+
+        AnimatorSet animSet = new AnimatorSet();
+        animSet.setDuration(400);
+        animSet.setInterpolator(new AnticipateInterpolator());
+        animSet.playTogether(animList);
+        animSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                mMenuLayout.setVisibility(View.INVISIBLE);
+            }
+        });
+        animSet.start();
+
+    }
+
+    /**
+     * 生成显示功能键动画
+     * @param item
+     * @return
+     */
+    private Animator createShowItemAnimator(View item) {
+
+        float dx = mFab.getX() - item.getX();
+        float dy = mFab.getY() - item.getY();
+
+        item.setRotation(0f);
+        item.setTranslationX(dx);
+        item.setTranslationY(dy);
+
+        Animator anim = ObjectAnimator.ofPropertyValuesHolder(
+                item,
+                AnimatorUtils.rotation(0f, 720f),
+                AnimatorUtils.translationX(dx, 0f),
+                AnimatorUtils.translationY(dy, 0f)
+        );
+
+        return anim;
+    }
+
+    /**
+     * 生成隐藏功能键动画
+     * @param item
+     * @return
+     */
+    private Animator createHideItemAnimator(final View item) {
+        float dx = mFab.getX() - item.getX();
+        float dy = mFab.getY() - item.getY();
+
+        Animator anim = ObjectAnimator.ofPropertyValuesHolder(
+                item,
+                AnimatorUtils.rotation(720f, 0f),
+                AnimatorUtils.translationX(0f, dx),
+                AnimatorUtils.translationY(0f, dy)
+        );
+
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                item.setTranslationX(0f);
+                item.setTranslationY(0f);
+            }
+        });
+
+        return anim;
+    }
+
+    /**
+     * 弹出popmenu动画线程
+     */
+    public class ShowPopMenuThread implements Runnable{
+
+        @Override
+        public void run() {
+            showMenu();
+        }
+    }
+
+    /**
+     * 隐藏popmenu动画线程
+     */
+    public class HidePopMenuThread implements Runnable{
+        @Override
+        public void run() {
+
+            mPopWindow.dismiss();
+        }
+    }
+
+    /**
+     * 长按线程
+     */
 public class LongPressedThread implements Runnable{
 
     @Override
 
     public void run() {
 
-        //这里处理长按事件
-
-        onFloatBallDoubleClick();
-        clickCount = 0;
+        //长按悬浮球事件
+        onFloatBallLongPressed();
+        mClickCount = 0;
 
     }
 
 }
 
+    /**
+     * 点击线程
+     */
     public class ClickPressedThread implements Runnable{
 
         @Override
 
         public void run() {
 
-            //这里处理连续点击事件 clickCount 为连续点击的次数
 
-            if(clickCount == 1)
+            if(mClickCount == 1)
             {
-                //单击
+                //单击悬浮球
                onFloatBallClick();
             }
-            else if (clickCount == 2)
+            else if (mClickCount == 2)
             {
-                //双击
+                //双击悬浮球
                 onFloatBallDoubleClick();
             }
-            clickCount = 0;
+            mClickCount = 0;
 
 
         }
@@ -210,116 +398,132 @@ public class LongPressedThread implements Runnable{
      * 创建ＦloatBallView，并初始化显示参数
      */
     private void createFloatBallView() {
-        wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        ballWmParams = new WindowManager.LayoutParams();
-        ballWmParams.type = WindowManager.LayoutParams.TYPE_PHONE;
-        ballWmParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        ballWmParams.gravity = Gravity.LEFT | Gravity.TOP;
 
-        ballWmParams.x = sp.getInt("ballWmParamsX",0);
-        ballWmParams.y = sp.getInt("ballWmParamsY",0);
+        //设置悬浮窗口参数
+        mWindowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        mBallWmParams = new WindowManager.LayoutParams();
+        mBallWmParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+        mBallWmParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        mBallWmParams.gravity = Gravity.LEFT | Gravity.TOP;
 
-      //  ballWmParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        //ballWmParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        ballWmParams.width = 120;
-        ballWmParams.height = 120;
-        ballWmParams.format = PixelFormat.RGBA_8888;
+        mBallWmParams.x = sp.getInt("ballWmParamsX",0);
+        mBallWmParams.y = sp.getInt("ballWmParamsY",0);
+
+        mBallWmParams.width = FLOAT_BALL_SIZE;
+        mBallWmParams.height = FLOAT_BALL_SIZE;
+        mBallWmParams.format = PixelFormat.RGBA_8888;
 
 
-        //注册触碰事件监听器
-        floatImage.setOnTouchListener(new View.OnTouchListener() {
+        //注册触摸事件监听器
+        mFloatImage.setOnTouchListener(new View.OnTouchListener() {
             public boolean onTouch(View v, MotionEvent event) {
                 x = event.getX();
                 y = event.getY();
-                if (tag == 0) {
-                    oldOffsetX = ballWmParams.x;
-                    oldOffsetY = ballWmParams.y;
+                if (mTag == 0) {
+                    mOldOffsetX = mBallWmParams.x;
+                    mOldOffsetY = mBallWmParams.y;
                 }
 
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        clickCount++;
+                        mClickCount++;
                         mPreClickTime = System.currentTimeMillis();
 
-                        if(mClickPressedThread != null)
-                        {
-                            myHandler.removeCallbacks(mClickPressedThread);
+                        //移除双击检测线程
+                        if (mClickPressedThread != null) {
+                            mHandler.removeCallbacks(mClickPressedThread);
                         }
-
+                        //启动长按线程
                         mLongPressedThread = new LongPressedThread();
-                        myHandler.postDelayed(mLongPressedThread,LONG_PRESS_TIME);
+                        mHandler.postDelayed(mLongPressedThread, LONG_PRESS_TIME);
+                        mLongPressing = true;
 
-                        ismoving = false;
+                        mIsmoving = false;
                         mTouchStartX = (int) event.getX();
                         mTouchStartY = (int) event.getY();
                         break;
                     case MotionEvent.ACTION_MOVE:
-                        ismoving = true;
+                        mIsmoving = true;
+                        mTag = 1;
+                        mBallWmParams.x += (int) (x - mTouchStartX) / 3;// 减小偏移量,防止过度抖动
+                        mBallWmParams.y += (int) (y - mTouchStartY) / 3;// 减小偏移量,防止过度抖动
 
-                        //取消注册的长按事件
-
-                      //  myHandler.removeCallbacks(mLongPressedThread);
-                        tag = 1;
-                        ballWmParams.x += (int) (x - mTouchStartX) / 3;// 减小偏移量,防止过度抖动
-                        ballWmParams.y += (int) (y - mTouchStartY) / 3;// 减小偏移量,防止过度抖动
-                        if (canmove) {
-                            updateViewPosition();
-                            saveStates("ballWmParamsX", ballWmParams.x);
-                            saveStates("ballWmParamsY", ballWmParams.y);
+                        //滑动量大于50像素取消长按事件
+                        if (Math.abs(mOldOffsetX - mBallWmParams.x) > 50 || Math.abs(mOldOffsetY - mBallWmParams.y) > 50) {
+                            //取消注册的长按事件
+                            mHandler.removeCallbacks(mLongPressedThread);
+                            mLongPressing = false;
                         }
 
+                        //更新悬浮球位置，保存位置
+                        if (mCanmove) {
+                            updateViewPosition();
+                            saveStates("ballWmParamsX", mBallWmParams.x);
+                            saveStates("ballWmParamsY", mBallWmParams.y);
+                        }
                         break;
                     case MotionEvent.ACTION_UP:
-
                         mTouchStartX = mTouchStartY = 0;
-                        newOffsetX = ballWmParams.x;
-                        newOffsetY = ballWmParams.y;
+                        mNewOffsetX = mBallWmParams.x;
+                        mNewOffsetY = mBallWmParams.y;
 
-                        // 点击悬浮球
-                        if (Math.abs(oldOffsetX - newOffsetX) <= 20 && Math.abs(oldOffsetY - newOffsetY) <= 20)
-                        {
+                        // 滑动偏移量小于40像素，判定为点击悬浮球
+                        if (Math.abs(mOldOffsetX - mNewOffsetX) <= 40 && Math.abs(mOldOffsetY - mNewOffsetY) <= 40) {
 
-                            if(System.currentTimeMillis() - mPreClickTime <= LONG_PRESS_TIME)
-                            {
+
+                            if (System.currentTimeMillis() - mPreClickTime <= LONG_PRESS_TIME) {
 
                                 //取消注册的长按事件
 
-                                myHandler.removeCallbacks(mLongPressedThread);
+                                mHandler.removeCallbacks(mLongPressedThread);
 
                                 mClickPressedThread = new ClickPressedThread();
-                                myHandler.postDelayed(mClickPressedThread, CLICK_SPACING_TIME);
+                                mHandler.postDelayed(mClickPressedThread, CLICK_SPACING_TIME);
                             }
 
-                            onClearOffset();
+                            onClearOffset();//清楚滑动偏移量
                         }
 
-                        if (!canmove) {
-                            //向上滑动
-                            if ((oldOffsetY - newOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20 && (oldOffsetY - newOffsetY) > 20) {
+                        if (!mCanmove && !mLongPressing) {
 
+                            //Y轴滑动偏移量大于40像素并且Y轴滑动偏移量比X轴偏移量多出20像素时判定为向上滑动
+                            if ((mOldOffsetY - mNewOffsetY) - Math.abs(mOldOffsetX - mNewOffsetX) > 20 && (mOldOffsetY - mNewOffsetY) > 40) {
+
+                                mClickCount = 0;
                                 onFloatBallFlipUp();
+
                             }
                             //向下滑动
-                            else if ((newOffsetY - oldOffsetY) - Math.abs(oldOffsetX - newOffsetX) > 20 && (newOffsetY - oldOffsetY) > 20) {
+                            else if ((mNewOffsetY - mOldOffsetY) - Math.abs(mOldOffsetX - mNewOffsetX) > 20 && (mNewOffsetY - mOldOffsetY) > 40) {
+
+                                mClickCount = 0;
                                 onFloatBallFlipDown();
+
                             }
                             //向左滑动
-                            else if ((oldOffsetX - newOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20 && (oldOffsetX - newOffsetX) > 20) {
+                            else if ((mOldOffsetX - mNewOffsetX) - Math.abs(mOldOffsetY - mNewOffsetY) > 20 && (mOldOffsetX - mNewOffsetX) > 40) {
+
+                                mClickCount = 0;
                                 onFloatBallFlipLeft();
+
                             }
                             //向右滑动
-                            else if ((newOffsetX - oldOffsetX) - Math.abs(oldOffsetY - newOffsetY) > 20 && (newOffsetX - oldOffsetX) > 20) {
+                            else if ((mNewOffsetX - mOldOffsetX) - Math.abs(mOldOffsetY - mNewOffsetY) > 20 && (mNewOffsetX - mOldOffsetX) > 40) {
+
+                                mClickCount = 0;
                                 onFloatBallFlipRight();
+
                             }
                             onClearOffset();
 
+
                         }
 
-                        tag = 0;
+                        mTag = 0;
                         break;
                 }
                 //如果拖动则返回false，否则返回true
-                if (ismoving == false) {
+                if (mIsmoving == false) {
                     return false;
                 } else {
                     return true;
@@ -335,8 +539,7 @@ public class LongPressedThread implements Runnable{
      * @param name
      * @param number
      */
-    public void saveStates(String name,int number)
-    {
+    public void saveStates(String name,int number) {
         Editor editor = sp.edit();
         editor.putInt(name, number);
         editor.commit();
@@ -346,71 +549,193 @@ public class LongPressedThread implements Runnable{
     /**
      * 清空滑动位移量
      */
-    private void onClearOffset()
-    {
-        ballWmParams.x = oldOffsetX;
-        ballWmParams.y = oldOffsetY;
+    private void onClearOffset() {
+        mBallWmParams.x = mOldOffsetX;
+        mBallWmParams.y = mOldOffsetY;
     }
 
+    /**
+     * 加载悬浮球功能
+     */
+    private void loadFunction() {
+
+        String scene = null;
+        String menuName = sp.getString("currentfunction",null);
+
+        if(menuName != null) {
+            scene = sp.getString(menuName,null);
+        }
+
+
+        if(scene != null) {
+            mCurrentFuncList =  mBallFunctionDao.findFuncs(scene);
+
+        }
+    }
+
+    /**
+     * 选择触发的功能
+     */
+    private  void chooseFunction(String action) {
+
+        switch (action) {
+            case "返回键":
+                FloatingBallUtils.keyBack();
+
+                break;
+            case "Home键":
+
+                FloatingBallUtils.keyHome();
+                break;
+            case "最近任务键":
+
+               FloatingBallUtils.openRecnetTask();
+                break;
+            case "电源键":
+
+                FloatingBallUtils.pressPower();
+                break;
+            case "菜单键":
+
+                FloatingBallUtils.keyMenu();
+                break;
+            case "重启":
+
+               FloatingBallUtils.reboot();
+                break;
+            case "关机":
+
+                FloatingBallUtils.shutdown();
+                break;
+            case "音量键加":
+
+               FloatingBallUtils.volumeUp();
+                break;
+            case "音量键减":
+
+                FloatingBallUtils.vloumeDown();
+                break;
+            default:
+                break;
+
+        }
+
+
+
+    }
+
+    /**
+     * 长按悬浮球
+     */
+    private void onFloatBallLongPressed() {
+
+        popUpMenu();
+    }
+
+    /**
+     * 点击悬浮球
+     */
+
+    private void  onFloatBallClick(){
+
+        chooseFunction(mCurrentFuncList.get(0));
+    }
 
     /**
      * 双击悬浮球
      */
     private void onFloatBallDoubleClick(){
 
-        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_APP_SWITCH);
+        chooseFunction(mCurrentFuncList.get(1));
 
     }
+
     /**
-     * 点击悬浮球返回
+     * 向上滑动悬浮球
      */
+    private void onFloatBallFlipUp() {
 
-    private  void  onFloatBallClick(){
-
-        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_BACK);
+        chooseFunction(mCurrentFuncList.get(2));
     }
+
     /**
-     * 悬浮球向上滑动，弹出menu
+     * 向下滑动悬浮球
      */
-
-    private  void  onFloatBallFlipUp(){
-
-
-        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_MENU);
+    private void onFloatBallFlipDown() {
+        chooseFunction(mCurrentFuncList.get(3));
     }
+
     /**
-     * 悬浮球向下滑动，回到桌面
+     * 向左滑动悬浮球
      */
+    private void onFloatBallFlipLeft() {
 
-    private  void  onFloatBallFlipDown(){
+        chooseFunction(mCurrentFuncList.get(4));
 
-
-        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_HOME);
     }
+
     /**
-     * 悬浮球向左滑动，关闭屏幕
+     * 向右滑动悬浮球
      */
+    private void onFloatBallFlipRight() {
 
-    private  void  onFloatBallFlipLeft(){
-
-
-        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_POWER);
+        chooseFunction(mCurrentFuncList.get(5));
     }
+
+
     /**
-     * 悬浮球向右滑动，打开任务面板
+     * 弹出功能菜单
      */
+    private  void popUpMenu() {
 
-    private  void  onFloatBallFlipRight(){
+        mPopWindow = new PopupWindow(mMenuView, 300, 600);
+        int offsetX = -(300-mBallWmParams.width);
+        int offsetY = -(300+mBallWmParams.height/2);
 
+        //功能键面板位于悬浮球左边
+        mPopWindow.showAsDropDown(mBallView, offsetX, offsetY);
+        mPopWindow.setFocusable(true);
+        mPopWindow.setOutsideTouchable(true);
+        mPopWindow.update();
 
-        FloatingBallUtils.simulateKey(KeyEvent.KEYCODE_APP_SWITCH);
+        //弹出面板后延迟100ms开始播放功能键显示动画
+        mHandler.postDelayed(mShowPopMenuThread, 100);
     }
+
+
     /**
-     * 更新view的显示位置
+     * 更新悬浮球的显示位置
      */
     private void updateViewPosition() {
 
-        wm.updateViewLayout(ballView, ballWmParams);
+        mWindowManager.updateViewLayout(mBallView, mBallWmParams);
+    }
+
+    /**
+     * 更新功能键图标
+     */
+    public void updateMenuIcons()
+    {
+        Button menuA = (Button) mMenuView.findViewById(R.id.menuA);
+        Button menuB = (Button) mMenuView.findViewById(R.id.menuB);
+        Button menuC = (Button) mMenuView.findViewById(R.id.menuC);
+        Button menuD = (Button) mMenuView.findViewById(R.id.menuD);
+        Button menuE = (Button) mMenuView.findViewById(R.id.menuE);
+
+
+        updateViewIcon(menuA,"menuA");
+        updateViewIcon(menuB,"menuB");
+        updateViewIcon(menuC,"menuC");
+        updateViewIcon(menuD,"menuD");
+        updateViewIcon(menuE,"menuE");
+
+        menuA.setText(mBallFunctionDao.findFuncKey("menuA").get(1));
+        menuB.setText(mBallFunctionDao.findFuncKey("menuB").get(1));
+        menuC.setText(mBallFunctionDao.findFuncKey("menuC").get(1));
+        menuD.setText(mBallFunctionDao.findFuncKey("menuD").get(1));
+        menuE.setText(mBallFunctionDao.findFuncKey("menuE").get(1));
+
+
     }
 
     @Override
@@ -418,52 +743,103 @@ public class LongPressedThread implements Runnable{
         return null;
     }
 
+    /**
+     * 处理点击事件
+     * @param v
+     */
     @Override
     public void onClick(View v) {
-        /*switch (v.getId()) {
-            case R.id.lay_main:
-                Toast.makeText(getApplicationContext(), "111", Toast.LENGTH_SHORT).show();
-                break;
+        switch (v.getId()) {
 
+            case R.id.fab:
+                closePopupWindow();
+                break;
+            case R.id.menuA:
+                menuClick("menuA");
+                break;
+            case R.id.menuB:
+                menuClick("menuB");
+                break;
+            case R.id.menuC:
+                menuClick("menuC");
+                break;
+            case R.id.menuD:
+                menuClick("menuD");
+                break;
+            case R.id.menuE:
+                menuClick("menuE");
+                break;
             default:
-                if(pop!=null && pop.isShowing()){
-                    pop.dismiss();
-                }
-                break;
-        }*/
-
-    }
-
-    @Override
-    public boolean onKey(View v, int keyCode, KeyEvent event) {
-        Toast.makeText(getApplicationContext(), "keyCode:"+keyCode, Toast.LENGTH_SHORT).show();
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_HOME:
-                pop.dismiss();
-                break;
-            default:
+                closePopupWindow();
                 break;
         }
-        return true;
+
     }
 
-    public void closeFloatBall()
-    {
-        if (isAdd)
-        {
-            wm.removeView(ballView);
-            isAdd = !isAdd;
+    /**
+     * 点击功能键
+     * @param menuName
+     */
+    private void menuClick(String menuName) {
+        FloatingBallUtils.saveState(sp,"currentfunction",menuName);
+        loadFunction();
+        updateBallIcon();
+        closePopupWindow();
+
+    }
+
+    /**
+     * 更新悬浮球图标
+      */
+    private void updateBallIcon() {
+        String menuName = sp.getString("currentfunction",null);
+        updateViewIcon(mFloatImage,menuName);
+        mFloatImage.getBackground().setAlpha(transparent);
+
+    }
+
+    /**
+     * 更新功能键图标
+     * @param view
+     * @param menuName
+     */
+    private void updateViewIcon(View view,String menuName) {
+        String iconName = mBallFunctionDao.findFuncKey(menuName).get(0);
+        Bitmap bitmap = FloatingBallUtils.getBitmap(iconName);
+        view.setBackgroundDrawable(new BitmapDrawable(bitmap));
+    }
+
+    /**
+     * 关闭功能键面板
+     */
+    private  void closePopupWindow() {
+        if(mPopWindow!=null && mPopWindow.isShowing()) {
+
+            hideMenu();
+            mHandler.postDelayed(mHidePopMenuThread,500);
+        }
+    }
+
+    /**
+     * 关闭悬浮球
+     */
+    public void closeFloatBall() {
+        if (mIsAdd) {
+            mWindowManager.removeView(mBallView);
+            mIsAdd = !mIsAdd;
         }
 
 
     }
-    public void  showFloatBall()
-    {
 
-        if(!isAdd)
-        {
-            wm.addView(ballView, ballWmParams);
-            isAdd = !isAdd;
+    /**
+     * 显示悬浮球
+     */
+    public void  showFloatBall() {
+
+        if(!mIsAdd) {
+            mWindowManager.addView(mBallView, mBallWmParams);
+            mIsAdd = !mIsAdd;
         }
 
     }

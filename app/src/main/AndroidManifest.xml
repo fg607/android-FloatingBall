@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.hardwork.fg607.floatingball"
-    android:sharedUserId="android.uid.system">
+    android:sharedUserId="android.uid.system" >
+
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.INJECT_EVENTS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
+        android:name=".utils.MyApplication"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/nor"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
@@ -24,27 +30,33 @@
             android:exported="true" >
         </service>
 
-        <receiver android:name=".receiver.BootCompletedReceiver">
+        <receiver android:name=".receiver.BootCompletedReceiver" >
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED">
+                <action android:name="android.intent.action.BOOT_COMPLETED" >
+                    <category android:name="android.intent.category.HOME" />
+                </action>
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".receiver.ShutdownReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_SHUTDOWN" >
                     <category android:name="android.intent.category.HOME" />
                 </action>
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".receiver.ShutdownReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.ACTION_SHUTDOWN">
-                    <category android:name="android.intent.category.HOME" />
-                </action>
-            </intent-filter>
-        </receiver>
-
+        <activity
+            android:name=".ChooseKeyActivity"
+            android:label="@string/title_activity_choose_key" >
+        </activity>
+        <activity
+            android:name=".FuncKeySetupActivity"
+            android:label="@string/title_activity_func_key_setup" >
+        </activity>
+        <activity
+            android:name=".ClipImageActivity"
+            android:label="@string/title_activity_clip_image" >
+        </activity>
     </application>
-
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
-    <uses-permission android:name="android.permission.INJECT_EVENTS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
 </manifest>

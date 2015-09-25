@@ -1,8 +1,83 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-    </style>
+  <!-- Base application theme. -->
+  <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <item name="colorPrimary">@color/primary</item>
+  </style>
+
+  <style name="Item" parent="">
+    <item name="android:textColor">@color/white</item>
+  </style>
+
+  <style name="Item.Small">
+    <item name="android:layout_width">@dimen/item_circle_size_small</item>
+    <item name="android:layout_height">@dimen/item_circle_size_small</item>
+    <item name="android:textSize">@dimen/item_font_size_small</item>
+  </style>
+
+  <style name="Item.Medium">
+    <item name="android:layout_width">@dimen/item_circle_size_medium</item>
+    <item name="android:layout_height">@dimen/item_circle_size_medium</item>
+    <item name="android:textSize">@dimen/item_font_size_medium</item>
+  </style>
+
+  <style name="Item.Large">
+    <item name="android:layout_width">@dimen/item_circle_size_large</item>
+    <item name="android:layout_height">@dimen/item_circle_size_large</item>
+    <item name="android:textSize">@dimen/item_font_size_large</item>
+  </style>
+
+  <style name="Item.Tumblr">
+    <item name="android:layout_width">@dimen/item_circle_size_tumblr</item>
+    <item name="android:layout_height">@dimen/item_circle_size_tumblr</item>
+    <item name="android:textSize">@dimen/item_font_size_tumblr</item>
+    <item name="android:textColor">@color/tumblr_primary</item>
+    <item name="android:background">@drawable/path_blue_oval</item>
+  </style>
+
+  <style name="Item.Path">
+    <item name="android:layout_width">@dimen/item_circle_size_path</item>
+    <item name="android:layout_height">@dimen/item_circle_size_path</item>
+    <item name="android:textSize">@dimen/item_font_size_path</item>
+    <item name="android:background">@drawable/path_white_oval</item>
+  </style>
+
+  <style name="Item.PathRed">
+    <item name="android:layout_width">@dimen/item_circle_size_path</item>
+    <item name="android:layout_height">@dimen/item_circle_size_path</item>
+    <item name="android:textSize">@dimen/item_font_size_path</item>
+    <item name="android:background">@drawable/path_red_oval</item>
+  </style>
+  <style name="Item.PathGreen">
+    <item name="android:layout_width">@dimen/item_circle_size_path</item>
+    <item name="android:layout_height">@dimen/item_circle_size_path</item>
+    <item name="android:textSize">@dimen/item_font_size_path</item>
+    <item name="android:background">@drawable/path_green_oval</item>
+  </style>
+  <style name="Item.PathBlue">
+    <item name="android:layout_width">@dimen/item_circle_size_path</item>
+    <item name="android:layout_height">@dimen/item_circle_size_path</item>
+    <item name="android:textSize">@dimen/item_font_size_path</item>
+    <item name="android:background">@drawable/path_blue_oval</item>
+  </style>
+  <style name="Item.PathOrange">
+    <item name="android:layout_width">@dimen/item_circle_size_path</item>
+    <item name="android:layout_height">@dimen/item_circle_size_path</item>
+    <item name="android:textSize">@dimen/item_font_size_path</item>
+    <item name="android:background">@drawable/path_orange_oval</item>
+  </style>
+
+  <style name="item">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">70dp</item>
+    <item name="android:paddingLeft">30dp</item>
+    <item name="android:paddingTop">8dp</item>
+    <item name="android:paddingRight">30dp</item>
+    <item name="android:paddingBottom">8dp</item>
+    <item name="android:minHeight">70dp</item>
+    <item name="android:drawablePadding">16dp</item>
+    <item name="android:textColor">@android:color/black</item>
+  </style>
+
 
 </resources>
