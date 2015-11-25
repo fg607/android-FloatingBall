@@ -64,10 +64,14 @@ public class FloatingBallService extends Service implements View.OnClickListener
     public SharedPreferences sp;
     private boolean mIsAdd;
     private int mClickCount;
-    public static final long CLICK_SPACING_TIME = 200;
+    public static final long CLICK_SPACING_TIME = 200;//双击间隔时间
     public static final long LONG_PRESS_TIME = 300;
     public static final int TRANSPARENT = 150;
-    public static final int FLOAT_BALL_SIZE = 90;
+    public static final int MIN_BALL_SIZE = 80;
+    public static final int MAX_BALL_SIZE = 200;
+    public static final int MENU_WINDOW_WIDTH = 500;
+    public static final int MENU_WINDOW_HEIGHT = 800;
+    private int floatBallSize = MIN_BALL_SIZE;
     private Handler mHandler;
     private LongPressedThread mLongPressedThread;
     private ClickPressedThread mClickPressedThread;
@@ -114,6 +118,8 @@ public class FloatingBallService extends Service implements View.OnClickListener
         //加载功能键
         setUpFloatMenuView();
 
+        //读取悬浮球大小
+        floatBallSize = sp.getInt("ballsize",MIN_BALL_SIZE);
         //加载悬浮球
         createFloatBallView();
 
@@ -151,6 +157,18 @@ public class FloatingBallService extends Service implements View.OnClickListener
                     break;
 
             }
+        }
+
+        //调整悬浮球大小
+        int ballSizePer = intent.getIntExtra("ballsize",0);
+
+        if(ballSizePer != 0) {
+
+            floatBallSize = (int)(MIN_BALL_SIZE + (MAX_BALL_SIZE - MIN_BALL_SIZE) / 100 * ballSizePer);
+
+            //保存悬浮球大小
+            saveStates("ballsize",floatBallSize);
+            updateFloatBall();
         }
 
         //重新加载悬浮球功能
@@ -402,15 +420,15 @@ public class LongPressedThread implements Runnable{
         //设置悬浮窗口参数
         mWindowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         mBallWmParams = new WindowManager.LayoutParams();
-        mBallWmParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+        mBallWmParams.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
         mBallWmParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         mBallWmParams.gravity = Gravity.LEFT | Gravity.TOP;
 
         mBallWmParams.x = sp.getInt("ballWmParamsX",0);
         mBallWmParams.y = sp.getInt("ballWmParamsY",0);
 
-        mBallWmParams.width = FLOAT_BALL_SIZE;
-        mBallWmParams.height = FLOAT_BALL_SIZE;
+        mBallWmParams.width = floatBallSize;
+        mBallWmParams.height = floatBallSize;
         mBallWmParams.format = PixelFormat.RGBA_8888;
 
 
@@ -688,14 +706,16 @@ public class LongPressedThread implements Runnable{
      */
     private  void popUpMenu() {
 
-        mPopWindow = new PopupWindow(mMenuView, 300, 600);
-        int offsetX = -(300-mBallWmParams.width);
-        int offsetY = -(300+mBallWmParams.height/2);
+        mPopWindow = new PopupWindow(mMenuView, MENU_WINDOW_WIDTH, MENU_WINDOW_HEIGHT);
+        int offsetX = -(MENU_WINDOW_WIDTH-mBallWmParams.width);
+        int offsetY = -(MENU_WINDOW_HEIGHT/2+mBallWmParams.height/2);
 
         //功能键面板位于悬浮球左边
         mPopWindow.showAsDropDown(mBallView, offsetX, offsetY);
-        mPopWindow.setFocusable(true);
-        mPopWindow.setOutsideTouchable(true);
+      //  mPopWindow.setFocusable(false);
+       // mPopWindow.setOutsideTouchable(true);
+        //位于键盘之上
+        mPopWindow.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
         mPopWindow.update();
 
         //弹出面板后延迟100ms开始播放功能键显示动画
@@ -842,6 +862,16 @@ public class LongPressedThread implements Runnable{
             mIsAdd = !mIsAdd;
         }
 
+    }
+
+    /**
+     * 更新悬浮球
+     */
+    public void updateFloatBall(){
+
+        mBallWmParams.width = floatBallSize;
+        mBallWmParams.height = floatBallSize;
+        mWindowManager.updateViewLayout(mBallView, mBallWmParams);
     }
 
     @Override

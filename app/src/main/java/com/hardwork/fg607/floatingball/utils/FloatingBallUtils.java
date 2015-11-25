@@ -81,6 +81,12 @@ public class FloatingBallUtils {
         editor.commit();
     }
 
+    public static void saveState(SharedPreferences sp,String name ,int value) {
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putInt(name, value);
+        editor.commit();
+    }
+
     public static void saveState(SharedPreferences sp,String name,Set<String> value) {
         SharedPreferences.Editor editor = sp.edit();
         editor.putStringSet(name, value);

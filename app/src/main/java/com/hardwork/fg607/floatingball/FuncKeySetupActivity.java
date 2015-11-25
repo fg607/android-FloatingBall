@@ -69,6 +69,8 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_func_key_setup);
 
+
+
         mIconImg = (ImageView) findViewById(R.id.icon);
         mTitle = (TextView) findViewById(R.id.tv_title);
         mScene = (TextView) findViewById(R.id.tv_scene);

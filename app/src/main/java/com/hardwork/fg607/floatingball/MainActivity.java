@@ -27,6 +27,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -74,6 +75,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     private AlertDialog mSceneAddDlg;
     private SceneAdapter mSceneAdapter;
     private ArrayAdapter mSpinnerAdapter;
+    private SeekBar mSeekBar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -134,13 +136,14 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         mSwitchOnOff = (Switch) view_setup1.findViewById(R.id.switch_start);
         mSwitchMove = (Switch) view_setup1.findViewById(R.id.switch_move);
         mSwitchAutoStart = (Switch) view_setup1.findViewById(R.id.switch_autostart);
+        mSeekBar = (SeekBar)view_setup1.findViewById(R.id.seekbar);
 
         //获取保存的状态数据，初始化开关状态
         if(sp.getBoolean("ballstate",false))
         {
             mSwitchOnOff.setChecked(true);
 
-            postMsg("ballstate","showball");
+            postMsg("ballstate", "showball");
 
         }
         else
@@ -170,6 +173,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                     FloatingBallUtils.saveState(sp, "ballstate", true);
 
                     mSwitchMove.setEnabled(true);
+                    mSwitchAutoStart.setEnabled(true);
+                    mSeekBar.setEnabled(true);
 
 
                 } else {
@@ -179,6 +184,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
                     //如果悬浮球关闭，禁用所有其它选项
                     mSwitchMove.setEnabled(false);
+                    mSwitchAutoStart.setEnabled(false);
+                    mSeekBar.setEnabled(false);
                 }
             }
         });
@@ -216,6 +223,42 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                 } else {
                     FloatingBallUtils.saveState(sp, "autostart", false);
                 }
+
+            }
+        });
+
+
+        //获取seekbar位置
+        int position = sp.getInt("seekbar_position",0);
+        if( position != 0){
+
+            mSeekBar.setProgress(position);
+        }
+
+        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar arg0) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar arg0, int arg1, boolean arg2) {
+                // TODO Auto-generated method stub
+
+                //保存seekbar进度
+                FloatingBallUtils.saveState(sp,"seekbar_position",arg1);
+                    Intent serviceIntent = new Intent();
+                    serviceIntent.putExtra("ballsize", arg1);
+                    serviceIntent.setClass(MainActivity.this, FloatingBallService.class);
+                    startService(serviceIntent);
 
             }
         });
