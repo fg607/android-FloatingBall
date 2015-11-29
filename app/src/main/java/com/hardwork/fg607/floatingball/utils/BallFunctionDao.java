@@ -239,4 +239,68 @@ public class BallFunctionDao {
 
         return arrayList;
     }
+
+
+    /**
+     * 增加app功能键
+     * @param name
+     * @param icon
+     * @param appPackage
+     */
+    public void addAppKey(String menu,String name,String icon,String appPackage){
+
+        SQLiteDatabase database = mySQLiteOpenHelper.getWritableDatabase();
+        database.execSQL("insert into appkey (menu,name,icon,package) " +
+                "values (?,?,?,?)", new Object[]{menu,name, icon, appPackage});
+        database.close();
+
+    }
+
+    /**
+     * 删除app功能键
+     * @param name
+     */
+    public void deleteAppKey(String name){
+
+        SQLiteDatabase database = mySQLiteOpenHelper.getWritableDatabase();
+        database.execSQL("delete from appkey where name = ?",new Object[]{name});
+        database.close();
+
+    }
+
+    /**
+     * 更新app功能键
+     * @param name
+     * @param icon
+     * @param appPackage
+     */
+    public void updateAppKey(String menu,String name,String icon,String appPackage){
+
+        SQLiteDatabase database = mySQLiteOpenHelper.getWritableDatabase();
+        database.execSQL("update appkey set name = ?,icon = ?,package = ? where menu = ?",
+                new Object[]{name,icon,appPackage,menu});
+        database.close();
+    }
+
+    /**
+     * 查找app功能键
+     * @param menu
+     * @return
+     */
+    public ArrayList<String> findAppKey(String menu){
+
+        SQLiteDatabase database = mySQLiteOpenHelper.getReadableDatabase();
+        Cursor cursor = database.rawQuery("select * from appkey where menu = ?", new String[]{menu});
+        ArrayList<String> arrayList = new ArrayList<String>();
+
+        while (cursor.moveToNext()) {
+            arrayList.add(cursor.getString(2));
+            arrayList.add(cursor.getString(3));
+            arrayList.add(cursor.getString(4));
+        }
+        cursor.close();
+        database.close();
+
+        return arrayList;
+    }
 }

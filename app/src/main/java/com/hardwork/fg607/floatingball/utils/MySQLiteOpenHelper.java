@@ -21,7 +21,11 @@ public class MySQLiteOpenHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL("create table funckey (_id integer primary key autoincrement," +
                 "name varchar(20),icon varchar(20),title varchar(20),scene varchar(20))");
 
+        sqLiteDatabase.execSQL("create table appkey (_id integer primary key autoincrement," +
+                "menu varchar(20),name varchar(20),icon varchar(20),package varchar(30))");
+
     }
+
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {

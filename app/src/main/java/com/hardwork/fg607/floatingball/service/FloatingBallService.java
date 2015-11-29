@@ -34,12 +34,15 @@ import android.widget.PopupWindow;
 import com.hardwork.fg607.floatingball.MainActivity;
 import com.hardwork.fg607.floatingball.R;
 import com.hardwork.fg607.floatingball.utils.AnimatorUtils;
+import com.hardwork.fg607.floatingball.utils.AppUtils;
 import com.hardwork.fg607.floatingball.utils.BallFunctionDao;
 import com.hardwork.fg607.floatingball.utils.FloatingBallUtils;
 import com.ogaclejapan.arclayout.ArcLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 import static android.content.SharedPreferences.Editor;
 
@@ -485,6 +488,7 @@ public class LongPressedThread implements Runnable{
                         mNewOffsetX = mBallWmParams.x;
                         mNewOffsetY = mBallWmParams.y;
 
+
                         // 滑动偏移量小于40像素，判定为点击悬浮球
                         if (Math.abs(mOldOffsetX - mNewOffsetX) <= 40 && Math.abs(mOldOffsetY - mNewOffsetY) <= 40) {
 
@@ -500,6 +504,10 @@ public class LongPressedThread implements Runnable{
                             }
 
                             onClearOffset();//清楚滑动偏移量
+                        }
+                        else if (mCanmove){
+
+                            mClickCount = 0;
                         }
 
                         if (!mCanmove && !mLongPressing) {
@@ -579,16 +587,18 @@ public class LongPressedThread implements Runnable{
 
         String scene = null;
         String menuName = sp.getString("currentfunction",null);
+        String func = sp.getString(menuName+"Func",null);
 
-        if(menuName != null) {
-            scene = sp.getString(menuName,null);
+        if(menuName != null && func.equals("scene") ) {
+            scene = sp.getString(menuName, null);
+            if(scene != null) {
+                mCurrentFuncList =  mBallFunctionDao.findFuncs(scene);
+
+            }
         }
 
 
-        if(scene != null) {
-            mCurrentFuncList =  mBallFunctionDao.findFuncs(scene);
 
-        }
     }
 
     /**
@@ -597,6 +607,10 @@ public class LongPressedThread implements Runnable{
     private  void chooseFunction(String action) {
 
         switch (action) {
+            case "移动(固定)悬浮球":
+                mCanmove = !mCanmove;
+
+                break;
             case "返回键":
                 FloatingBallUtils.keyBack();
 
@@ -736,24 +750,24 @@ public class LongPressedThread implements Runnable{
      */
     public void updateMenuIcons()
     {
-        Button menuA = (Button) mMenuView.findViewById(R.id.menuA);
-        Button menuB = (Button) mMenuView.findViewById(R.id.menuB);
-        Button menuC = (Button) mMenuView.findViewById(R.id.menuC);
-        Button menuD = (Button) mMenuView.findViewById(R.id.menuD);
-        Button menuE = (Button) mMenuView.findViewById(R.id.menuE);
+        CircleImageView menuA = (CircleImageView) mMenuView.findViewById(R.id.menuA);
+        CircleImageView menuB = (CircleImageView) mMenuView.findViewById(R.id.menuB);
+        CircleImageView menuC = (CircleImageView) mMenuView.findViewById(R.id.menuC);
+        CircleImageView menuD = (CircleImageView) mMenuView.findViewById(R.id.menuD);
+        CircleImageView menuE = (CircleImageView) mMenuView.findViewById(R.id.menuE);
 
 
         updateViewIcon(menuA,"menuA");
         updateViewIcon(menuB,"menuB");
         updateViewIcon(menuC,"menuC");
         updateViewIcon(menuD,"menuD");
-        updateViewIcon(menuE,"menuE");
+        updateViewIcon(menuE, "menuE");
 
-        menuA.setText(mBallFunctionDao.findFuncKey("menuA").get(1));
-        menuB.setText(mBallFunctionDao.findFuncKey("menuB").get(1));
-        menuC.setText(mBallFunctionDao.findFuncKey("menuC").get(1));
-        menuD.setText(mBallFunctionDao.findFuncKey("menuD").get(1));
-        menuE.setText(mBallFunctionDao.findFuncKey("menuE").get(1));
+        //menuA.setText(mBallFunctionDao.findFuncKey("menuA").get(1));
+       // menuB.setText(mBallFunctionDao.findFuncKey("menuB").get(1));
+        //menuC.setText(mBallFunctionDao.findFuncKey("menuC").get(1));
+       // menuD.setText(mBallFunctionDao.findFuncKey("menuD").get(1));
+       // menuE.setText(mBallFunctionDao.findFuncKey("menuE").get(1));
 
 
     }
@@ -801,9 +815,24 @@ public class LongPressedThread implements Runnable{
      * @param menuName
      */
     private void menuClick(String menuName) {
-        FloatingBallUtils.saveState(sp,"currentfunction",menuName);
-        loadFunction();
-        updateBallIcon();
+        String func = sp.getString(menuName+"Func",null);
+        if(func.equals("scene")){
+
+            FloatingBallUtils.saveState(sp,"currentfunction",menuName);
+            loadFunction();
+            updateBallIcon();
+        }
+        else if(func.equals("app")) {
+
+            //打开app
+            ArrayList<String> AppList = mBallFunctionDao.findAppKey(menuName);
+
+            if (AppList.size() > 0) {
+
+                AppUtils.startApplication(getApplicationContext(),AppList.get(2));
+            }
+        }
+
         closePopupWindow();
 
     }
@@ -812,7 +841,7 @@ public class LongPressedThread implements Runnable{
      * 更新悬浮球图标
       */
     private void updateBallIcon() {
-        String menuName = sp.getString("currentfunction",null);
+        String menuName = sp.getString("currentfunction", null);
         updateViewIcon(mFloatImage,menuName);
         mFloatImage.getBackground().setAlpha(transparent);
 
@@ -824,9 +853,35 @@ public class LongPressedThread implements Runnable{
      * @param menuName
      */
     private void updateViewIcon(View view,String menuName) {
-        String iconName = mBallFunctionDao.findFuncKey(menuName).get(0);
-        Bitmap bitmap = FloatingBallUtils.getBitmap(iconName);
-        view.setBackgroundDrawable(new BitmapDrawable(bitmap));
+        String func = sp.getString(menuName + "Func", null);
+        String icon = null;
+        if(func.equals("scene")){
+            icon = mBallFunctionDao.findFuncKey(menuName).get(0);
+        }
+        else if(func.equals("app")){
+
+            icon = mBallFunctionDao.findAppKey(menuName).get(1);
+        }
+
+        if(icon != null){
+
+            Bitmap bitmap = FloatingBallUtils.getBitmap(icon);
+
+            if(bitmap != null){
+
+                if(view instanceof CircleImageView){
+
+                   CircleImageView circleImageView = (CircleImageView)view;
+                    circleImageView.setImageDrawable(new BitmapDrawable(bitmap));
+                }
+                else {
+                    view.setBackgroundDrawable(new BitmapDrawable(bitmap));
+                }
+
+            }
+
+        }
+
     }
 
     /**

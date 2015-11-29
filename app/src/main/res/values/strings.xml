@@ -38,5 +38,6 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_func_key_setup">FuncKeySetupActivity</string>
     <string name="title_activity_clip_image">ClipImageActivity</string>
+    <string name="title_activity_choose_app">ChooseAppActivity</string>
 
 </resources>

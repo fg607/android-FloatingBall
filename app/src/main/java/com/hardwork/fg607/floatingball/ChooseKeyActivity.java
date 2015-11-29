@@ -77,6 +77,7 @@ public class ChooseKeyActivity extends ActionBarActivity {
      * 初始化功能列表
      */
    public void init() {
+    mArrayList.add(new ChooseKeyItem(R.drawable.ic_home, "移动(固定)悬浮球", false));
     mArrayList.add(new ChooseKeyItem(R.drawable.ic_back, "返回键", false));
     mArrayList.add(new ChooseKeyItem(R.drawable.ic_menu, "菜单键", false));
     mArrayList.add(new ChooseKeyItem(R.drawable.ic_home,"Home键",false));

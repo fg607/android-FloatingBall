@@ -277,7 +277,7 @@ public class FloatingBallUtils {
      * @param fileName
      * @throws IOException
      */
-    public static void saveBitmap(Bitmap bitmap,String fileName) throws IOException {
+    public static String saveBitmap(Bitmap bitmap,String fileName) throws IOException {
 
         String rootdir = Environment.getExternalStorageDirectory().getAbsolutePath()+"/hwfb";
 
@@ -312,6 +312,8 @@ public class FloatingBallUtils {
         os.flush();
         os.close();
         isBm.close();
+
+        return file.getAbsolutePath();
     }
 
     /**

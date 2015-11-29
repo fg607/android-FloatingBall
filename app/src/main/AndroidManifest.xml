@@ -57,6 +57,10 @@
             android:name=".ClipImageActivity"
             android:label="@string/title_activity_clip_image" >
         </activity>
+        <activity
+            android:name=".ui.ChooseAppActivity"
+            android:label="@string/title_activity_choose_app" >
+        </activity>
     </application>
 
 </manifest>

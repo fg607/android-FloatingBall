@@ -8,6 +8,7 @@ package com.hardwork.fg607.floatingball;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
@@ -35,8 +36,10 @@ import android.widget.TextView;
 import com.hardwork.fg607.floatingball.service.FloatingBallService;
 import com.hardwork.fg607.floatingball.utils.BallFunctionDao;
 import com.hardwork.fg607.floatingball.utils.FloatingBallUtils;
+import com.hardwork.fg607.floatingball.utils.ImageUtils;
 import com.hardwork.fg607.floatingball.utils.MyPagerAdapter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,36 +96,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             FloatingBallUtils.saveState(sp,"firststart",false);
         }
 
-        //设置actionBar为导航栏模式，添加标题
-        mActionBar = getSupportActionBar();// 如果不使用Android Support Library, 则调用getActionBar()方法
-        mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);// NAVIGATION_MODE_TABS常量表示Tab导航模式
-        mActionBar.setDisplayShowTitleEnabled(true);//显示标题
+        initActionBar();
 
-        mTabs=new ArrayList<ActionBar.Tab>();
-
-        ActionBar.Tab tab0=mActionBar.newTab();
-        tab0.setText("基础设置");
-        tab0.setTabListener(this);
-        mTabs.add(tab0);
-        mActionBar.addTab(tab0);
-
-        ActionBar.Tab tab1=mActionBar.newTab();
-        tab1.setText("功能键设置");
-        tab1.setTabListener(this);
-        mTabs.add(tab1);
-        mActionBar.addTab(tab1);
-
-        ActionBar.Tab tab2=mActionBar.newTab();
-        tab2.setText("场景管理");
-        tab2.setTabListener(this);
-        mTabs.add(tab2);
-        mActionBar.addTab(tab2);
-
-        ActionBar.Tab tab3=mActionBar.newTab();
-        tab3.setText("手势设置");
-        tab3.setTabListener(this);
-        mTabs.add(tab3);
-        mActionBar.addTab(tab3);
 
         //生成4个设置界面
         mInflater = getLayoutInflater().from(this);
@@ -132,7 +107,139 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         View view_setup3 = mInflater.inflate(R.layout.setup3, null);
         View view_setup4 = mInflater.inflate(R.layout.setup4, null);
 
-       //初始化setup1界面控件
+        initTab1(view_setup1);
+        initTab2(view_setup2);
+        initTab3(view_setup3);
+        initTab4(view_setup4);
+
+        initViewPager(view_setup1, view_setup2, view_setup3, view_setup4);
+
+
+    }
+
+    public void initViewPager(View view_setup1, View view_setup2, View view_setup3, View view_setup4) {
+        //实例化ViewPager适配器
+        viewList = new ArrayList<View>();
+        viewList.add(view_setup1);
+        viewList.add(view_setup2);
+        viewList.add(view_setup3);
+        viewList.add(view_setup4);
+
+        mViewPager = (ViewPager) findViewById(R.id.viewpager);
+        mViewPager.setAdapter(new MyPagerAdapter(viewList));
+        mViewPager.setOnPageChangeListener(this);
+        mViewPager.setCurrentItem(SETUP_BASE_ACTIVITY); //基础设置页面为首页
+    }
+
+    public void initTab4(View view_setup4) {
+        //初始化setup4界面
+        mFuncNameList = mBallFunctionDao.findFuncsAllName();
+        spinner = (Spinner) view_setup4.findViewById(R.id.spinner);
+        mSpinnerAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item,mFuncNameList);
+        mSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(mSpinnerAdapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
+
+
+                //刷新动作列表
+                mActionListViewAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+
+        lv_action = (ListView) view_setup4.findViewById(R.id.lv_action);
+        lv_action.setDivider(null);//取消列表分割线
+
+        mActionList = new ArrayList<String>();
+        mActionList.add("单击");
+        mActionList.add("双击");
+        mActionList.add("上滑");
+        mActionList.add("下滑");
+        mActionList.add("左滑");
+        mActionList.add("右滑");
+
+        mActionListViewAdapter = new ActionListViewAdapter();
+        lv_action.setAdapter(mActionListViewAdapter);
+
+        lv_action.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+
+                mChangePositon = position;
+                Intent intent = new Intent();
+                intent.putExtra("value", mBallFunctionDao.findFuncs((String) spinner.getSelectedItem()).get(position));
+                intent.setClass(MainActivity.this, ChooseKeyActivity.class);
+                startActivityForResult(intent, SETUP_ACTION);
+            }
+        });
+    }
+
+    public void initTab3(View view_setup3) {
+        //初始化setup3界面
+        sceneAdd = (Button) view_setup3.findViewById(add);
+        mSceneListView = (ListView) view_setup3.findViewById(lv_scene);
+        mSceneList = mBallFunctionDao.findFuncsAllName();
+        mSceneAdapter = new SceneAdapter();
+        mSceneListView.setAdapter(mSceneAdapter);
+
+        sceneAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                popupSceneAddDlg();
+            }
+        });
+
+        mSceneListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+                    popupSceneItemDlg(i);
+
+                return false;
+            }
+        });
+    }
+
+    public void initTab2(View view_setup2) {
+        //初始化setup2界面控件
+        lvFuncKey = (ListView) view_setup2.findViewById(R.id.lv_funckey);
+        funcKeyList = new ArrayList<String>();
+
+        funcKeyList.add("menuA");
+        funcKeyList.add("menuB");
+        funcKeyList.add("menuC");
+        funcKeyList.add("menuD");
+        funcKeyList.add("menuE");
+
+        updateKeyView();//绑定适配器
+
+        lvFuncKey.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+                currentKey = mBallFunctionDao.findAllKeyName().get(i);
+
+                Intent intent = new Intent(MainActivity.this,FuncKeySetupActivity.class);
+
+                intent.putExtra("keyname", currentKey);
+
+                startActivityForResult(intent,SETUPKEY);
+
+            }
+        });
+    }
+
+    public void initTab1(View view_setup1) {
+        //初始化setup1界面控件
         mSwitchOnOff = (Switch) view_setup1.findViewById(R.id.switch_start);
         mSwitchMove = (Switch) view_setup1.findViewById(R.id.switch_move);
         mSwitchAutoStart = (Switch) view_setup1.findViewById(R.id.switch_autostart);
@@ -159,7 +266,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         {
             mSwitchAutoStart.setChecked(false);
         }
-
 
 
         mSwitchOnOff.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -262,121 +368,39 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
             }
         });
+    }
 
+    public void initActionBar() {
+        //设置actionBar为导航栏模式，添加标题
+        mActionBar = getSupportActionBar();// 如果不使用Android Support Library, 则调用getActionBar()方法
+        mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);// NAVIGATION_MODE_TABS常量表示Tab导航模式
+        mActionBar.setDisplayShowTitleEnabled(true);//显示标题
 
-        //初始化setup2界面控件
-        lvFuncKey = (ListView) view_setup2.findViewById(R.id.lv_funckey);
-        funcKeyList = new ArrayList<String>();
+        mTabs=new ArrayList<ActionBar.Tab>();
 
-        funcKeyList.add("功能键1");
-        funcKeyList.add("功能键2");
-        funcKeyList.add("功能键3");
-        funcKeyList.add("功能键4");
-        funcKeyList.add("功能键5");
+        ActionBar.Tab tab0=mActionBar.newTab();
+        tab0.setText("基础设置");
+        tab0.setTabListener(this);
+        mTabs.add(tab0);
+        mActionBar.addTab(tab0);
 
-        updateKeyView();//绑定适配器
+        ActionBar.Tab tab1=mActionBar.newTab();
+        tab1.setText("功能键设置");
+        tab1.setTabListener(this);
+        mTabs.add(tab1);
+        mActionBar.addTab(tab1);
 
-        lvFuncKey.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        ActionBar.Tab tab2=mActionBar.newTab();
+        tab2.setText("场景管理");
+        tab2.setTabListener(this);
+        mTabs.add(tab2);
+        mActionBar.addTab(tab2);
 
-                currentKey = mBallFunctionDao.findAllKeyName().get(i);
-
-                Intent intent = new Intent(MainActivity.this,FuncKeySetupActivity.class);
-
-                intent.putExtra("keyname", currentKey);
-
-                startActivityForResult(intent,SETUPKEY);
-
-            }
-        });
-
-        //初始化setup3界面
-        sceneAdd = (Button) view_setup3.findViewById(add);
-        mSceneListView = (ListView) view_setup3.findViewById(lv_scene);
-        mSceneList = mBallFunctionDao.findFuncsAllName();
-        mSceneAdapter = new SceneAdapter();
-        mSceneListView.setAdapter(mSceneAdapter);
-
-        sceneAdd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                popupSceneAddDlg();
-            }
-        });
-
-        mSceneListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-
-                    popupSceneItemDlg(i);
-
-                return false;
-            }
-        });
-
-        //初始化setup4界面
-        mFuncNameList = mBallFunctionDao.findFuncsAllName();
-        spinner = (Spinner) view_setup4.findViewById(R.id.spinner);
-        mSpinnerAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item,mFuncNameList);
-        mSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(mSpinnerAdapter);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
-
-
-                //刷新动作列表
-                mActionListViewAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
-            }
-        });
-
-
-        lv_action = (ListView) view_setup4.findViewById(R.id.lv_action);
-        lv_action.setDivider(null);//取消列表分割线
-
-        mActionList = new ArrayList<String>();
-        mActionList.add("单击");
-        mActionList.add("双击");
-        mActionList.add("上滑");
-        mActionList.add("下滑");
-        mActionList.add("左滑");
-        mActionList.add("右滑");
-
-        mActionListViewAdapter = new ActionListViewAdapter();
-        lv_action.setAdapter(mActionListViewAdapter);
-
-        lv_action.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-
-                mChangePositon = position;
-                Intent intent = new Intent();
-                intent.putExtra("value", mBallFunctionDao.findFuncs((String) spinner.getSelectedItem()).get(position));
-                intent.setClass(MainActivity.this, ChooseKeyActivity.class);
-                startActivityForResult(intent, SETUP_ACTION);
-            }
-        });
-
-
-        //实例化ViewPager适配器
-        viewList = new ArrayList<View>();
-        viewList.add(view_setup1);
-        viewList.add(view_setup2);
-        viewList.add(view_setup3);
-        viewList.add(view_setup4);
-
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
-        mViewPager.setAdapter(new MyPagerAdapter(viewList));
-        mViewPager.setOnPageChangeListener(this);
-        mViewPager.setCurrentItem(SETUP_BASE_ACTIVITY); //基础设置页面为首页
+        ActionBar.Tab tab3=mActionBar.newTab();
+        tab3.setText("手势设置");
+        tab3.setTabListener(this);
+        mTabs.add(tab3);
+        mActionBar.addTab(tab3);
     }
 
     /**
@@ -434,26 +458,31 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         String menuA = sp.getString("menuA", null);
         if(menuA == null) {
             FloatingBallUtils.saveState(sp, "menuA", "默认场景");
+            FloatingBallUtils.saveState(sp,"menuAFunc","scene");
         }
 
         String menuB = sp.getString("menuB",null);
         if(menuB == null) {
             FloatingBallUtils.saveState(sp,"menuB","预设场景1");
+            FloatingBallUtils.saveState(sp,"menuBFunc","scene");
         }
 
         String menuC = sp.getString("menuC",null);
         if(menuC == null) {
             FloatingBallUtils.saveState(sp,"menuC","预设场景2");
+            FloatingBallUtils.saveState(sp,"menuCFunc","scene");
         }
 
         String menuD = sp.getString("menuD",null);
         if(menuD == null) {
             FloatingBallUtils.saveState(sp,"menuD","预设场景3");
+            FloatingBallUtils.saveState(sp,"menuDFunc","scene");
         }
 
         String menuE = sp.getString("menuE",null);
         if(menuE == null) {
             FloatingBallUtils.saveState(sp,"menuE","预设场景4");
+            FloatingBallUtils.saveState(sp,"menuEFunc","scene");
         }
 
         //初始化悬浮球当前使用的场景
@@ -629,16 +658,22 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             ArrayList<String> keyContent = mBallFunctionDao.findFuncKey(mBallFunctionDao.findAllKeyName().get(position));
 
             TextView tv_funcKey = (TextView) funcKeylv.findViewById(R.id.tv_funckey);
-            tv_funcKey.setText(funcKeyList.get(position));
-
             ImageView img = (ImageView) funcKeylv.findViewById(R.id.img_funckey);
-            img.setImageBitmap(FloatingBallUtils.getBitmap(keyContent.get(0)));
+            TextView name_funcKey = (TextView) funcKeylv.findViewById(R.id.scene_funckey);
+            tv_funcKey.setText(funcKeyList.get(position));
+            String menu = funcKeyList.get(position);
+            String func = sp.getString(menu+"Func",null);
+            if(func.equals("scene")){
+                img.setImageBitmap(FloatingBallUtils.getBitmap(keyContent.get(0)));
+                name_funcKey.setText(keyContent.get(2));
+            }else if(func.equals("app")){
+                ArrayList<String> appKeyContent = mBallFunctionDao.findAppKey(menu);
+                img.setImageBitmap(FloatingBallUtils.getBitmap(appKeyContent.get(1)));
+                name_funcKey.setText(appKeyContent.get(0));
+            }
 
-            TextView title_funcKey = (TextView) funcKeylv.findViewById(R.id.title_funckey);
-            title_funcKey.setText(keyContent.get(1));
 
-            TextView scene_funcKey = (TextView) funcKeylv.findViewById(R.id.scene_funckey);
-            scene_funcKey.setText(keyContent.get(2));
+
 
             return funcKeylv;
         }
@@ -716,8 +751,14 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
      * @param scene 场景名称
      */
     public void bindScene(String keyName,String scene) {
+        FloatingBallUtils.saveState(sp,keyName+"Func","scene");
         FloatingBallUtils.saveState(sp, keyName, scene);
         postMsg("loadfunction", true);
+        postMsg("updatemenuicons", true);
+    }
+
+    public void bindApp(){
+
         postMsg("updatemenuicons", true);
     }
 
@@ -730,13 +771,43 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         mBallFunctionDao.updateFuncKey(keyName, data.get(0), data.get(1), data.get(2));
     }
 
+    public void saveAppKeyData(String currentKey,Intent data){
+
+        String iconPath = saveAppIcon(data.getStringExtra("name"),data.getByteArrayExtra("icon"));
+        FloatingBallUtils.saveState(sp, currentKey + "Func", data.getStringExtra("func"));
+
+        ArrayList<String> list = mBallFunctionDao.findAppKey(currentKey);
+        if(list != null && list.size() > 0){
+
+            mBallFunctionDao.updateAppKey(currentKey,data.getStringExtra("name"),
+                    iconPath,data.getStringExtra("package"));
+        }else {
+
+            mBallFunctionDao.addAppKey(currentKey,data.getStringExtra("name"),
+                    iconPath,data.getStringExtra("package"));
+        }
+
+
+    }
+
+    public String saveAppIcon(String name,byte[] bytes){
+
+        Bitmap bp = ImageUtils.Bytes2Bitmap(bytes);
+        String path = null;
+        try {
+            path = FloatingBallUtils.saveBitmap(bp, name);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return path;
+    }
     /**
      * 更新设置后的功能键列表
      */
     public void updateKeyView()
     {
         lvFuncKey.setAdapter(new FuncKeyListViewAdapter());
-
     }
 
 
@@ -808,13 +879,31 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         //设置功能键对应场景
         if(requestCode == SETUPKEY) {
             if(data != null) {
-                currentKeyData = data.getStringArrayListExtra("keycontent");
 
-                if(currentKeyData != null) {
-                    saveKeyData(currentKey,currentKeyData);
-                    bindScene(currentKey,currentKeyData.get(2));//currentKeyData.get(2)场景名称
-                    updateKeyView();
+                String func = data.getStringExtra("func");
+
+                if(func.equals("scene")){
+                    currentKeyData = data.getStringArrayListExtra("keycontent");
+
+                    if(currentKeyData != null) {
+                        saveKeyData(currentKey,currentKeyData);
+                        bindScene(currentKey,currentKeyData.get(2));//currentKeyData.get(2)场景名称
+                        updateKeyView();
+                    }
                 }
+                else if(func.equals("app")){
+
+                    saveAppKeyData(currentKey,data);
+                    bindApp();
+                    updateKeyView();
+                }else if(func.equals("oldapp")){
+
+                    FloatingBallUtils.saveState(sp,currentKey+"Func","app");
+                    bindApp();
+                    updateKeyView();
+
+                }
+
             }
         }
 

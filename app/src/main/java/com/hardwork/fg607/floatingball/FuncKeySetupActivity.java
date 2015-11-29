@@ -3,6 +3,7 @@ package com.hardwork.fg607.floatingball;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -10,7 +11,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
-import android.text.InputFilter;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,22 +18,27 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.hardwork.fg607.floatingball.ui.ChooseAppActivity;
 import com.hardwork.fg607.floatingball.utils.BallFunctionDao;
 import com.hardwork.fg607.floatingball.utils.FloatingBallUtils;
+import com.hardwork.fg607.floatingball.utils.ImageUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class FuncKeySetupActivity extends ActionBarActivity implements View.OnClickListener {
 
     private ImageView mIconImg;
-    private TextView mTitle;
     private TextView mScene;
     private BallFunctionDao mBallFunctionDao;
     private ImageView mCheck1;
@@ -42,14 +47,18 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
     private ImageView mCheck4;
     private ImageView mCheck5;
     private ImageView mCheck6;
+    private CircleImageView mAppIcon;
+    private CheckBox mCheckBoxApp;
+    private CheckBox mCheckBoxScene;
+    private TextView mAppName;
     private RelativeLayout mImg1;
     private RelativeLayout mImg2;
     private RelativeLayout mImg3;
     private RelativeLayout mImg4;
     private RelativeLayout mImg5;
     private RelativeLayout mImg6;
-    private RelativeLayout mTitleLayout;
     private RelativeLayout mSceneLayout;
+    private RelativeLayout mAppLayout;
     private ImageView mViewChoosed;
     private Bitmap mUserBitmap = null;
     private Button mNewIconButton;
@@ -59,7 +68,13 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
     private ArrayList<String> mSceneList;
     private String mIconPath;
     private ArrayList<String> mKeyContent;
+    private ArrayList<String> mAppKeyContent = null;
     private String mFileName;
+    String keyName;
+    private CircleImageView circleImageView;
+    private Intent mMenuSavedIntent;
+    private SharedPreferences sp;
+    public static final int CHOOSE_APPCODE = 1<<0;
 
     public static final int REQUEST_PICK = 345;
     public static final int REQUEST_CLIP = 346;
@@ -69,19 +84,75 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_func_key_setup);
 
+        sp = FloatingBallUtils.getSharedPreferences(this);
+        circleImageView = (CircleImageView) findViewById(R.id.icon_app);
 
+        bindViews();
 
+        initViews();
+    }
+
+    public void initViews() {
+
+        Intent intent = getIntent();
+         keyName = intent.getStringExtra("keyname");
+
+        if(keyName != null) {
+            this.setTitle(keyName+"设置");
+            String func = sp.getString(keyName+"Func",null);
+            if(func.equals("scene")){
+
+                mCheckBoxScene.setChecked(true);
+                mCheckBoxApp.setChecked(false);
+            }
+            else if(func.equals("app")){
+
+                mCheckBoxScene.setChecked(false);
+                mCheckBoxApp.setChecked(true);
+
+            }
+
+            mBallFunctionDao = new BallFunctionDao(this);
+            //读取场景信息
+            mKeyContent = mBallFunctionDao.findFuncKey(keyName);
+            mIconImg.setImageBitmap(FloatingBallUtils.getBitmap(mKeyContent.get(0)));
+            mViewChoosed =  setIconChoosed(mKeyContent.get(0));
+            mScene.setText(mKeyContent.get(2));
+
+            //读取app信息
+            mAppKeyContent = mBallFunctionDao.findAppKey(keyName);
+            if(mAppKeyContent != null && mAppKeyContent.size() > 0){
+
+                mAppName.setText(mAppKeyContent.get(0));
+
+                Bitmap bitmap = ImageUtils.scaleBitmap(mAppKeyContent.get(1),35);
+                mAppIcon.setImageDrawable(ImageUtils.bitmap2Drawable(bitmap));
+            }
+
+        }
+        else {
+            Intent intent1 =  new Intent(this,MainActivity.class);
+            intent1.putExtra("keySetOk", false);
+            this.setResult(KEY_SET_FAILED, intent1);
+            finish();
+        }
+    }
+
+    public void bindViews() {
         mIconImg = (ImageView) findViewById(R.id.icon);
-        mTitle = (TextView) findViewById(R.id.tv_title);
         mScene = (TextView) findViewById(R.id.tv_scene);
+        mAppIcon = (CircleImageView) findViewById(R.id.icon_app);
+        mAppName = (TextView) findViewById(R.id.app_name);
         mImg1 = (RelativeLayout) findViewById(R.id.img1);
         mImg2 = (RelativeLayout) findViewById(R.id.img2);
         mImg3 = (RelativeLayout) findViewById(R.id.img3);
         mImg4 = (RelativeLayout) findViewById(R.id.img4);
         mImg5 = (RelativeLayout) findViewById(R.id.img5);
         mImg6 = (RelativeLayout) findViewById(R.id.img6);
-        mTitleLayout = (RelativeLayout) findViewById(R.id.title_layout);
         mSceneLayout = (RelativeLayout) findViewById(R.id.scene_layout);
+        mAppLayout = (RelativeLayout) findViewById(R.id.app_layout);
+        mCheckBoxApp = (CheckBox) findViewById(R.id.checkbox_app);
+        mCheckBoxScene = (CheckBox) findViewById(R.id.checkbox_scene);
         mNewIconButton = (Button) findViewById(R.id.iconedit);
         mImg1.setOnClickListener(this);
         mImg2.setOnClickListener(this);
@@ -89,8 +160,10 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
         mImg4.setOnClickListener(this);
         mImg5.setOnClickListener(this);
         mImg6.setOnClickListener(this);
-        mTitleLayout.setOnClickListener(this);
         mSceneLayout.setOnClickListener(this);
+        mAppLayout.setOnClickListener(this);
+        mCheckBoxScene.setOnClickListener(this);
+        mCheckBoxApp.setOnClickListener(this);
         mNewIconButton.setOnClickListener(this);
         mCheck1 = (ImageView) findViewById(R.id.check1);
         mCheck2 = (ImageView) findViewById(R.id.check2);
@@ -98,25 +171,6 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
         mCheck4 = (ImageView) findViewById(R.id.check4);
         mCheck5 = (ImageView) findViewById(R.id.check5);
         mCheck6 = (ImageView) findViewById(R.id.check6);
-
-        Intent intent = getIntent();
-        String keyName = intent.getStringExtra("keyname");
-
-        if(keyName != null) {
-            this.setTitle(keyName+"设置");
-            mBallFunctionDao = new BallFunctionDao(this);
-            mKeyContent = mBallFunctionDao.findFuncKey(keyName);
-            mIconImg.setImageBitmap(FloatingBallUtils.getBitmap(mKeyContent.get(0)));
-            mViewChoosed =  setIconChoosed(mKeyContent.get(0));
-            mTitle.setText(mKeyContent.get(1));
-            mScene.setText(mKeyContent.get(2));
-        }
-        else {
-            Intent intent1 =  new Intent(this,MainActivity.class);
-            intent1.putExtra("keySetOk",false);
-            this.setResult(KEY_SET_FAILED,intent1);
-            finish();
-        }
     }
 
     /**
@@ -187,14 +241,34 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
         //点击完成图标
         if (id == R.id.action_compeleted) {
 
-            if(mCheck6.getVisibility() == View.VISIBLE) {
+            if(mCheckBoxScene.isChecked()){
+                Intent intent = new Intent();
+                mKeyContent.set(2,mScene.getText().toString());
+
+                intent.putStringArrayListExtra("keycontent", mKeyContent);
+                intent.putExtra("func", "scene");
+                mMenuSavedIntent = intent;
             }
-            //保存功能键信息
-            mKeyContent.set(1,mTitle.getText().toString());
-            mKeyContent.set(2,mScene.getText().toString());
-            Intent intent = new Intent();
-            intent.putStringArrayListExtra("keycontent",mKeyContent);
-            setResult(MainActivity.SETUPKEY,intent);
+            else {
+                String menuName = sp.getString("currentfunction", null);
+                if(menuName.equals(keyName)){
+
+                    Toast.makeText(this,"当前功能键场景正在应用中，请先解绑功能键场景！",
+                            Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                if(mMenuSavedIntent != null){
+                    mMenuSavedIntent.putExtra("func","app");
+                }
+                else {
+                    mMenuSavedIntent  = new Intent();
+                    mMenuSavedIntent.putExtra("func","oldapp");
+                }
+
+
+            }
+
+            setResult(MainActivity.SETUPKEY,mMenuSavedIntent);
             finish();
         }
 
@@ -239,19 +313,54 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
                 }
 
                 break;
-            case R.id.title_layout:
-                popupEditDialog();
-                break;
             case R.id.scene_layout:
                 popupSceneDialog();
                 break;
             case R.id.iconedit:
                 cropIcon();
                 break;
+            case R.id.app_layout:
+                openChooseAppDialog();
+                break;
+            case R.id.checkbox_app:
+                setApp();
+                break;
+            case R.id.checkbox_scene:
+                setScene();
+                break;
             default:
                 break;
         }
 
+    }
+
+    public void setApp(){
+
+        if(mCheckBoxApp.isChecked()){
+
+            mCheckBoxScene.setChecked(false);
+        }else {
+            mCheckBoxScene.setChecked(true);
+        }
+    }
+
+    public void setScene(){
+
+        if(mCheckBoxScene.isChecked()){
+
+            mCheckBoxApp.setChecked(false);
+        }else {
+            mCheckBoxApp.setChecked(true);
+
+        }
+
+    }
+    public void openChooseAppDialog(){
+
+        Intent intent = new Intent();
+        intent.putExtra("app_name",mAppName.getText());
+        intent.setClass(this, ChooseAppActivity.class);
+        startActivityForResult(intent,CHOOSE_APPCODE);
     }
 
     /**
@@ -266,45 +375,6 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
         mImg6.setBackgroundDrawable(new BitmapDrawable(bitmap));
     }
 
-    /**
-     * 弹出编辑标题对话框
-     */
-    public void popupEditDialog() {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle("设置标题");
-        View view = View.inflate(this, R.layout.edit_popup, null);
-
-        mEditText = (EditText) view.findViewById(R.id.title);
-        mEditText.setHint(mTitle.getText());
-        mEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(2
-        )});
-
-        TextView  bt_ok = (TextView) view.findViewById(R.id.ok);
-        TextView bt_cancel = (TextView) view.findViewById(R.id.cancel);
-
-        bt_ok.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String text = mEditText.getText().toString().trim();
-
-                if (text != null) {
-                    mTitle.setText(text);
-                }
-                mEditDialog.dismiss();
-            }
-        });
-
-        bt_cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mEditDialog.dismiss();
-            }
-        });
-
-        builder.setView(view);
-        mEditDialog =  builder.show();
-
-    }
 
     /**
      * 弹出选择场景对话框
@@ -435,6 +505,19 @@ public class FuncKeySetupActivity extends ActionBarActivity implements View.OnCl
                 mViewChoosed.setVisibility(View.INVISIBLE);
                 mViewChoosed = setIconChoosed(mIconPath);
             }
+        }
+        else if(requestCode == CHOOSE_APPCODE){
+
+            if(data != null){
+
+                //更新控件内容
+                mAppName.setText(data.getStringExtra("name"));
+                mAppIcon.setImageDrawable(ImageUtils.Bytes2Drawable(data.getByteArrayExtra("icon")));
+                //保存设置
+                mMenuSavedIntent = data;
+
+            }
+
         }
 
     }

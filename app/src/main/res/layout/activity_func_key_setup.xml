@@ -4,208 +4,47 @@
     android:orientation="vertical"
     android:background="#fff">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="悬浮图标"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="20dp"
-        android:textSize="18sp"
-        android:textColor="@color/theme"/>
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:background="#eceef4">
+        android:layout_height="50dp"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="@color/theme"
+            android:textSize="18sp"
+            android:layout_marginLeft="20dp"
+            android:text="功能："/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="20dp"
+            android:textColor="@color/theme"
+            android:textSize="16sp"
+            android:text="场景"/>
+        <CheckBox
+            android:id="@+id/checkbox_scene"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="20dp"
+            android:textColor="@color/theme"
+            android:textSize="16sp"
+            android:text="应用"/>
+        <CheckBox
+            android:id="@+id/checkbox_app"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+
 
     </LinearLayout>
-
-    <RelativeLayout
-        android:layout_width="fill_parent"
-        android:layout_height="80dp"
-        android:layout_marginTop="10dp">
-
-        <ImageView
-            android:id="@+id/icon"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_centerInParent="true"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="20dp"
-            />
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="fill_parent"
-        android:layout_height="70dp">
-
-
-        <RelativeLayout
-            android:id="@+id/img1"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="10dp"
-            android:background="@drawable/nor"
-            android:clickable="true"
-            >
-
-            <ImageView
-                android:id="@+id/check1"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="invisible"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/sl_choosestyle"
-                />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/img2"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
-            android:layout_toRightOf="@id/img1"
-            android:layout_marginLeft="13dp"
-            android:background="@drawable/clover"
-            android:clickable="true"
-            >
-            <ImageView
-                android:id="@+id/check2"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="invisible"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/sl_choosestyle"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/img3"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_toRightOf="@id/img2"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="10dp"
-            android:background="@drawable/american"
-            android:clickable="true"
-            >
-
-            <ImageView
-                android:id="@+id/check3"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="invisible"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/sl_choosestyle"
-                />
-        </RelativeLayout>
-
-
-        <RelativeLayout
-            android:id="@+id/img4"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
-            android:layout_centerInParent="true"
-            android:background="@drawable/iphone"
-            android:clickable="true"
-            >
-
-            <ImageView
-                android:id="@+id/check4"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="invisible"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/sl_choosestyle"
-                />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/img5"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
-            android:layout_toRightOf="@id/img4"
-            android:layout_marginLeft="13dp"
-            android:background="@drawable/superman"
-            android:clickable="true"
-            >
-
-            <ImageView
-                android:id="@+id/check5"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="invisible"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/sl_choosestyle"
-                />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/img6"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
-            android:layout_toRightOf="@id/img5"
-            android:layout_marginLeft="10dp"
-            android:clickable="false"
-            >
-
-            <ImageView
-                android:id="@+id/check6"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="invisible"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/sl_choosestyle"
-                />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/img7"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
-            android:layout_marginRight="10dp"
-            android:background="@drawable/bg_customize_pic_nor">
-
-            <Button
-                android:id="@+id/iconedit"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_centerInParent="true"
-                android:layout_centerVertical="true"
-                android:background="@drawable/ic_customize_pic_picture" />
-
-        </RelativeLayout>
-
-
-    </RelativeLayout>
-
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -214,51 +53,275 @@
 
     </LinearLayout>
 
-
-
-
-    <RelativeLayout
-        android:id="@+id/title_layout"
-        android:layout_width="fill_parent"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:clickable="true"
-        >
+        android:orientation="vertical"
+        android:background="#fff">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="功能标题"
+            android:text="场景设置"
+            android:gravity="center"
+            android:layout_marginTop="10dp"
             android:layout_marginLeft="20dp"
-            android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"
             android:textSize="18sp"
             android:textColor="@color/theme"/>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#eceef4">
 
-        <TextView
-            android:id="@+id/tv_title"
-            android:layout_width="wrap_content"
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="20dp"
+                android:text="悬浮图标"
+                android:textSize="18sp"
+                android:textColor="@color/theme"/>
+
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_centerInParent="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="20dp"
+                />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="70dp">
+
+
+            <RelativeLayout
+                android:id="@+id/img1"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/nor"
+                android:clickable="true"
+                >
+
+                <ImageView
+                    android:id="@+id/check1"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="invisible"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/sl_choosestyle"
+                    />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/img2"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@id/img1"
+                android:layout_marginLeft="13dp"
+                android:background="@drawable/clover"
+                android:clickable="true"
+                >
+                <ImageView
+                    android:id="@+id/check2"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="invisible"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/sl_choosestyle"
+                    />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/img3"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_toRightOf="@id/img2"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/american"
+                android:clickable="true"
+                >
+
+                <ImageView
+                    android:id="@+id/check3"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="invisible"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/sl_choosestyle"
+                    />
+            </RelativeLayout>
+
+
+            <RelativeLayout
+                android:id="@+id/img4"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:layout_centerInParent="true"
+                android:background="@drawable/iphone"
+                android:clickable="true"
+                >
+
+                <ImageView
+                    android:id="@+id/check4"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="invisible"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/sl_choosestyle"
+                    />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/img5"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@id/img4"
+                android:layout_marginLeft="13dp"
+                android:background="@drawable/superman"
+                android:clickable="true"
+                >
+
+                <ImageView
+                    android:id="@+id/check5"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="invisible"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/sl_choosestyle"
+                    />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/img6"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@id/img5"
+                android:layout_marginLeft="10dp"
+                android:clickable="false"
+                >
+
+                <ImageView
+                    android:id="@+id/check6"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="invisible"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/sl_choosestyle"
+                    />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/img7"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="10dp"
+                android:background="@drawable/bg_customize_pic_nor">
+
+                <Button
+                    android:id="@+id/iconedit"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_centerInParent="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/ic_customize_pic_picture" />
+
+            </RelativeLayout>
+
+
+        </RelativeLayout>
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#eceef4"></LinearLayout>
+
+
+
+
+
+        <RelativeLayout
+            android:id="@+id/scene_layout"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:singleLine="true"
-            android:maxEms="2"
-            android:textSize="17sp"
-            />
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:clickable="true">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_toRightOf="@id/tv_title"
-            android:layout_alignBottom="@id/tv_title"
-            android:src="@drawable/ic_arrow_down"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="对应场景"
+                android:textSize="18sp"
+                android:textColor="@color/theme"
+                android:layout_marginLeft="20dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"/>
 
-    </RelativeLayout>
+            <TextView
+                android:id="@+id/tv_scene"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:textSize="17sp"
+                />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_toRightOf="@id/tv_scene"
+                android:layout_alignBottom="@id/tv_scene"
+                android:src="@drawable/ic_arrow_down"/>
+
+        </RelativeLayout>
 
 
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -266,46 +329,52 @@
         android:background="#eceef4"></LinearLayout>
 
 
-
-
-
     <RelativeLayout
-        android:id="@+id/scene_layout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:id="@+id/app_layout"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
+        android:background="@drawable/app_layout_back"
         android:clickable="true">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="对应场景"
-            android:textSize="18sp"
-            android:textColor="@color/theme"
-            android:layout_marginLeft="20dp"
+            android:layout_alignParentTop="true"
             android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"/>
-
+            android:textSize="16sp"
+            android:textColor="@color/theme"
+            android:clickable="false"
+            android:text="应用"/>
         <TextView
-            android:id="@+id/tv_scene"
+            android:id="@+id/app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/theme"
+            android:text="QQ"
+            android:clickable="false"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"/>
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/icon_app"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_centerInParent="true"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:textSize="17sp"
-            />
+            android:src="@drawable/clover"/>
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_toRightOf="@id/tv_scene"
-            android:layout_alignBottom="@id/tv_scene"
-            android:src="@drawable/ic_arrow_down"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/ic_arrow_right"
+            android:clickable="false"/>
 
     </RelativeLayout>
-
 
 
 </LinearLayout>
